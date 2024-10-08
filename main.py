@@ -6,8 +6,8 @@ app = Flask(__name__)
 def home():
     return render_template('index.html')
 
-@app.route('/sign-up')
-def home():
+@app.route('/SignUp')
+def sign_up():
     return render_template('sign-up.html')
 
 if __name__ == '__main__':
