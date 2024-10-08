@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Sign up Form</title>
+</head>
+<body>
+
+    <!-- Main Body/container -->
+    <div class="main-container w-full h-screen flex">
+
+        <!-- Logo Container / 1 sub-container -->
+        <div class="logo-container w-1/2 h-full">
+            <img src="static\images\Inventra-logo.png" alt="logo" class="px-52 mt-12">
+            <p class="pl-40 mt-44 text-2xl font-medium" style="font-family:poppins;">Create an account to streamline your inventory <br><br> and take control to your stock with ease.</p>
+        </div>
+
+        <!-- 2 sub-container -->
+        <div class="form-container w-1/2 h-full relative pl-20">
+
+            <!-- Background image only for the container -->
+            <div class="absolute inset-0 bg-[url('/static/images/Login_BG-cropped.svg')] bg-cover bg-center z-0"></div>
+
+            <!-- Sign Up Form with z-index to be on top -->
+            <div class="signup-container relative z-10  ml-24 mr-40 mt-28 rounded-3xl bg-[#B5C2CA] pt-5 pb-7">
+                <div>
+                    <p class="text-3xl font-bold text-center pb-1" style="font-family:poppins;">Sign Up</p>
+                </div>
+                <hr style="border:1px solid grey;">
+                <form action="#" class="px-6">
+                    <div class="py-1 pt-5">
+                        <label style="font-family:poppins;">Username</label><br>
+                        <input type="text" class="w-full h-10 rounded-lg bg-[#E8EFFF] requried">
+                    </div> 
+                    <div class="py-1">
+                        <label style="font-family:poppins;">Email</label><br>
+                        <input type="email" class="w-full h-10 rounded-lg bg-[#E8EFFF] requried">
+                    </div>
+                    <div class="py-1">
+                        <label style="font-family:poppins;">Password</label><br>
+                        <input type="password" class="w-full h-10 rounded-lg bg-[#E8EFFF] requried">
+                    </div>
+                    <div class="py-1">
+                        <label style="font-family:poppins;">Confirm password</label><br>
+                        <input type="password" class="w-full h-10 rounded-lg bg-[#E8EFFF] requried">
+                    </div>
+                    <button type="submit" class="w-full rounded-lg p-1 py-2 mt-4 text-xl bg-[#134074] text-white" style="font-family:poppins;">Sign up</button>
+                    <p class="pt-4"><a href="#" class="hover:bg-blue-600" style="font-family:poppins;">Already have an account?</a></p>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
