@@ -4,6 +4,10 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
+    return render_template('index.html')
+
+@app.route('/sign-up')
+def home():
     return render_template('sign-up.html')
 
 if __name__ == '__main__':
