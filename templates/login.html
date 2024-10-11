@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>login</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body style="font-family: poppins;">
     <div class="flex w-full">
@@ -19,20 +20,43 @@
             <div class="absolute inset-0 bg-[url('/static/images/Login_BG-cropped.svg')] bg-cover bg-center z-0"></div>
             <div class="relative z-10 p-8"> 
                 <div class="p-4 mt-28 w-[70%] ml-[15%] bg-[#B5C2CA] shadow-2xl" style="border-radius: 12%;">
-                    <h1 class="text-4xl font-bold text-center mt-8">login</h1> 
-                    <hr style="border:1px solid grey;" class="mb-6">
-                    <label class="text-lg">Username or email</label><br>
-                    <input type="text" class="w-full h-[6vh] rounded-lg bg-[#E8EFFF] p-2 mb-6" placeholder="Username">
-                    <label class="text-lg">Password</label><br>
-                    <input type="password" class="p-2 mb-6 w-full h-[6vh] rounded-lg bg-[#E8EFFF]" placeholder="Password">
-                    <button class="w-full rounded-lg p-1 py-2 text-xl bg-[#134074] text-white mb-8">Login</button>
-                    <div class="flex justify-between mb-8"> 
-                        <a class="hover:text-blue-600">Don't have an account?</a>
-                        <a class="hover:text-blue-500">Forgot password?</a>
-                    </div>
+                    <form id="login-form">
+                        <h1 class="text-4xl font-bold text-center mt-8">login</h1> 
+                        <hr style="border:1px solid grey;" class="mb-6">
+                        <label class="text-lg">Username or email</label><br>
+                        <input type="text" class="w-full h-[6vh] rounded-lg bg-[#E8EFFF] p-2 mb-6" id="username" placeholder="Username" required>
+                        <label class="text-lg">Password</label><br>
+                        <input type="password" class="p-2 mb-6 w-full h-[6vh] rounded-lg bg-[#E8EFFF]" id="password" placeholder="Password" required>
+                        <button class="w-full rounded-lg p-1 py-2 text-xl bg-[#134074] text-white mb-8" type="button" onclick="sendFormData()">Login</button>
+                        <div class="flex justify-between mb-8"> 
+                            <a class="hover:text-blue-600">Don't have an account?</a>
+                            <a class="hover:text-blue-500">Forgot password?</a>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div> 
     </div>
+    <script>
+        function sendFormData() {
+            let username = document.getElementById('username').value;
+            let password = document.getElementById('password').value;
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/login', 
+                    data: {
+                        username: username,
+                        password: password
+                    },
+                    success: function(response) {
+                        $('#result').html(response.message); 
+                    },
+                    error: function(error) {
+                        $('#result').html('Error occurred'); 
+                    }
+                });
+        }
+    </script>
 </body>
 </html>

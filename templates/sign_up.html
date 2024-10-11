@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <title>Sign up Form</title>
 </head>
 <body>
@@ -30,28 +31,54 @@
                     <p class="text-3xl font-bold text-center pb-1" style="font-family:poppins;">Sign Up</p>
                 </div>
                 <hr style="border:1px solid grey;">
-                <form action="#" class="px-6">
+                <form id="sign-up_form" class="px-6">
                     <div class="py-1 pt-5">
                         <label style="font-family:poppins;">Username</label><br>
-                        <input type="text" class="w-full h-10 rounded-lg bg-[#E8EFFF] py-2 px-2 requried">
+                        <input type="text" class="w-full h-10 rounded-lg bg-[#E8EFFF] py-2 px-2 " requried id="username">
                     </div> 
                     <div class="py-1">
                         <label style="font-family:poppins;">Email</label><br>
-                        <input type="email" class="w-full h-10 rounded-lg bg-[#E8EFFF] py-2 px-2 requried">
+                        <input type="email" class="w-full h-10 rounded-lg bg-[#E8EFFF] py-2 px-2 " requried id="email">
                     </div>
                     <div class="py-1">
                         <label style="font-family:poppins;">Password</label><br>
-                        <input type="password" class="w-full h-10 rounded-lg bg-[#E8EFFF] py-2 px-2 requried">
+                        <input type="password" class="w-full h-10 rounded-lg bg-[#E8EFFF] py-2 px-2 " requried id="password">
                     </div>
                     <div class="py-1">
                         <label style="font-family:poppins;">Confirm password</label><br>
-                        <input type="password" class="w-full h-10 rounded-lg bg-[#E8EFFF] py-2 px-2 requried">
+                        <input type="password" class="w-full h-10 rounded-lg bg-[#E8EFFF] py-2 px-2 " requried id="cpassword">
                     </div>
-                    <button type="submit" class="w-full rounded-lg p-1 py-2 mt-4 text-xl bg-[#134074] text-white" style="font-family:poppins;">Sign up</button>
+                    <button type="button" onclick="sendFormData()" class="w-full rounded-lg p-1 py-2 mt-4 text-xl bg-[#134074] text-white" style="font-family:poppins;">Sign up</button>
                     <p class="pt-4"><a href="#" class="hover:bg-blue-600" style="font-family:poppins;">Already have an account?</a></p>
                 </form>
             </div>
         </div>
     </div>
+    <script>
+        function sendFormData() {
+            let username = document.getElementById('username').value;
+            let email = document.getElementById('email').value;
+            let password = document.getElementById('password').value;
+            let cpassword = document.getElementById('cpassword').value;
+
+            $.ajax({
+                type: 'POST',
+                url: '/sign_up',
+                data: {
+                    username: username,
+                    email: email,
+                    password: password,
+                    cpassword: cpassword
+                },
+                success: function(response) {
+                    $('#result').html(response.message);
+                },
+                error: function(error) {
+                    $('#result').html('Error occurred');
+                }
+            });
+        }
+
+    </script>
 </body>
 </html>
