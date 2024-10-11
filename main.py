@@ -10,5 +10,9 @@ def home():
 def sign_up():
     return render_template('sign_up.html')
 
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
