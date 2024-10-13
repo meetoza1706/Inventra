@@ -49,7 +49,7 @@
                         <input type="password" class="w-full h-10 rounded-lg bg-[#E8EFFF] py-2 px-2 " requried id="cpassword">
                     </div>
                     <button type="button" onclick="sendFormData()" class="w-full rounded-lg p-1 py-2 mt-4 text-xl bg-[#134074] text-white" style="font-family:poppins;">Sign up</button>
-                    <p class="pt-4"><a href="#" class="hover:bg-blue-600" style="font-family:poppins;">Already have an account?</a></p>
+                    <p class="pt-4"><a href="{{ url_for('login') }}" class="hover:text-blue-600" style="font-family:poppins;">Already have an account?</a></p>
                 </form>
             </div>
         </div>

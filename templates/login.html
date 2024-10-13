@@ -29,7 +29,7 @@
                         <input type="password" class="p-2 mb-6 w-full h-[6vh] rounded-lg bg-[#E8EFFF]" id="password" placeholder="Password" required>
                         <button class="w-full rounded-lg p-1 py-2 text-xl bg-[#134074] text-white mb-8" type="button" onclick="sendFormData()">Login</button>
                         <div class="flex justify-between mb-8"> 
-                            <a class="hover:text-blue-600">Don't have an account?</a>
+                            <a href="{{ url_for('sign_up') }}" class="hover:text-blue-600">Don't have an account?</a>
                             <a class="hover:text-blue-500">Forgot password?</a>
                         </div>
                     </form>
