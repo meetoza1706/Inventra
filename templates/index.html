@@ -1,13 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
-</head>
-<body>
-    <h1>Welcome to the landing Page</h1>
-    <a href="{{ url_for('sign_up') }}">Sign Up</a><br>
-    <a href="{{ url_for('login') }}">login</a>
-</body>
+<html>
+    <head>
+        <title>Inventra</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    </head>
+    <body class="m-0">
+        <section class="absolute inset-0 w-full h-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0 " style="background-color: #ffffff;">                
+            <nav class="flex flex-row items-center pt-4">
+                <div class="w-[40%]"><img src="/static/images/landing_page_logo.svg" alt="Description of SVG" width="300px" height="30px" class="pl-12"/></div>
+                <div class="w-[60%]">
+                    <ul class="flex flex-row gap-[17%]">
+                        <li>Overview</li>
+                        <li>Pricing</li>
+                        <li>Features</li>
+                        <li>About us</li>
+                        <li><a href="{{ url_for('login') }}">button</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </section>
+    </body>
 </html>
