@@ -29,7 +29,14 @@ def login():
         return jsonify({'message': f'Success for {username}.'})
     
     return render_template('login.html')
-    
+
+@app.route('/test')
+def test():
+    return render_template('content.html')
+
+@app.route('/test2')
+def test2():
+    return render_template('dashboard.html')
 
 if __name__ == '__main__':
     app.run(port=5000)
