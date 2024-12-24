@@ -6,74 +6,82 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <title>Register Your Company</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
 </head>
-<body>
+<body class="h-full w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat">
 
-<!-- Header -->
-  <div class="mt-5 w-full flex justify-between items-center px-5 mb-8">
+  <!-- Header -->
+  <div class="mt-5 w-full flex justify-between items-center px-5">
     <div class="px-3 bg-[#13315C] text-white text-xl rounded-xl text-3xl">12:12</div>
     <div class="flex items-center">
-      <div class="flex items-center">
-          <i class="fa-solid fa-user border-2 rounded-3xl bg-[#b5c2ca] p-2"></i>
-        </div>
-      </div>
+      <i class="fa-solid fa-user border-2 rounded-3xl bg-[#b5c2ca] p-2"></i>
     </div>
   </div>
-   
+
   <!-- Form -->
-<div class="flex justify-center h-auto mt-24 drop-shadow-2xl">
-  <div class="bg-[#b5c2ca] w-auto rounded-3xl shadow-lg p-6">
-    <h1 class="text-3xl font-bold text-center mb-2">Register Your Company</h1>
-    <hr>
-    <form class="mt-2">
-      <div class="grid grid-cols-2 gap-4">
-        <!-- Company Name -->
-        <div>
-          <label for="company-name" class="text-lg">Company name</label>
-          <input type="text" id="company-name" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+  <div class="flex justify-center items-center h-full">
+    <div class="bg-[#b5c2ca] w-auto rounded-3xl shadow-lg p-6">
+      <h1 class="text-3xl font-bold text-center mb-2">Register Your Company</h1>
+      <hr>
+      <form class="mt-2">
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Company Name -->
+          <div>
+            <label for="company-name" class="text-lg">Company name</label>
+            <input type="text" id="company-name" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+
+          <!-- Website -->
+          <div>
+            <label for="website" class="text-lg">Website</label>
+            <input type="text" id="website" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label for="email" class="text-lg">Email</label>
+            <input type="email" id="email" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+
+          <!-- Date Established -->
+          <div>
+            <label for="date-established" class="text-lg">Date established</label>
+            <input type="date" id="date-established" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+
+          <!-- Contact Number -->
+          <div>
+            <label for="contact-number" class="text-lg">Contact number</label>
+            <input type="text" id="contact-number" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+
+          <!-- Status -->
+          <div>
+            <label for="status" class="text-lg">Status</label>
+            <input type="text" id="status" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
         </div>
 
-        <!-- Website -->
-        <div>
-          <label for="website" class="text-lg">Website</label>
-          <input type="text" id="website" class="mt-1 block w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <div class="mt-4 hover:text-blue-600 text-sm">
+          <p>Are you finding your company?</p>
         </div>
 
-        <!-- Email -->
-        <div>
-          <label for="email" class="text-lg">Email</label>
-          <input type="email" id="email" class="mt-1 block w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
-        </div>
-
-        <!-- Date Established -->
-        <div>
-          <label for="date-established" class="text-lg">Date established</label>
-          <input type="date" id="date-established" class="mt-1 block w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
-        </div>
-
-        <!-- Contact Number -->
-        <div>
-          <label for="contact-number" class="text-lg">Contact number</label>
-          <input type="text" id="contact-number" class="mt-1 block w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
-        </div>
-
-        <!-- Status -->
-        <div>
-          <label for="status" class="text-lg">Status</label>
-          <input type="text" id="status" class="mt-1 block w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
-        </div>
-      </div>
-
-      <div class="mt-4 hover:text-blue-600 text-sm">
-        <p>Are you finding your company?</p>
-      </div>
-
-      <button type="submit" class="mt-4 w-full bg-[#134074] font-bold text-white text-2xl py-2 rounded-lg">
-        Submit
-      </button>
-    </form>
-  </div> 
-</div>
+        <button type="submit" class="mt-4 w-full bg-[#134074] font-bold text-white text-2xl py-2 rounded-lg">
+          Submit
+        </button>
+      </form>
+    </div>
+  </div>
 
 </body>
 </html>
