@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tailwind Layout</title>
+  <!-- Link to Poppins font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    /* Apply Poppins font to the entire body */
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    /* Prevent body overflow */
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* Fix overflow on the main container */
+    .main-container {
+      height: 100%;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <div class="mt-5 w-full flex justify-between items-center px-5 rounded-lg mb-24 ">
+    <div class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
+    <div class="flex items-center">
+      <div class="flex items-center">
+        <div class="w-9 h-7 bg-gray-300 rounded-3xl px-2.5 m-2">
+          <i class="fa-solid fa-user"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  <div class="w-full h-full flex items-center justify-center">
+    <div class="w-full max-w-2xl  rounded-8xl p-4 mt-5 main-container">
+      <div class="rounded-3xl bg-[#B5C2CA] py-4">
+        <div >
+          <p class="text-2xl font-bold text-center pb-2">
+            FIND YOUR COMPANY
+          </p>
+        </div>
+        <hr>
+        <div class="px-4">
+          <div class="py-1 pt-8">
+            <div class="w-full h-10 bg-white flex items-center justify-start pl-7 rounded-xl">
+              <!-- Search Icon (black color) -->
+              <i class="fa-solid fa-search text-black mr-3"></i>
+              <!-- Input Text -->
+              <input type="text" placeholder="Search your company name..." class="w-full h-full bg-transparent outline-none text-gray-700 placeholder-gray-500" />
+            </div>
+            
+          </div>
+          <div class="py-8 w-full h-10 rounded-2xl bg-[#E8EFFF] mt-32 flex items-center justify-start pl-8">
+            <!-- Add Icon -->
+            <i class="fa-solid fa-plus text-black mr-3"></i>
+            <!-- Text -->
+            <div>Create your company</div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
