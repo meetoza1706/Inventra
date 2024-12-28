@@ -9,10 +9,10 @@
         rel="stylesheet" />
 </head>
 
-<body
-    class="absolute inset-0 w-full h-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0"
-    style="background-color: #ffffff">
-    <section>
+<body class="relative w-full h-full z-0" style="background-color: #ffffff;">
+    <section
+        class="relative w-full h-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0"
+        style="background-color: #ffffff">
         <nav class="flex flex-row items-center pt-4">
             <div class="w-[40%]">
                 <img src="/static/images/landing_page_logo.svg" alt="Description of SVG" width="300px" height="30px"
@@ -40,43 +40,46 @@
                 </ul>
             </div>
         </nav>
-    </section>
-    <section> <!--section 2-->
-        <div class="flex flex-col inset-0 mt-[5%] ml-[16%] z-3">
-            <!--main div-->
-            <div style="font-family: 'Playwrite DE Grund', sans-serif" class="flex w-full">
-                <div class="relative z-1">
-                    <img src="/static/images/Yellow_Highlight.svg" alt="" height="100" width="100"
-                        class="absolute -left-16 -top-16 z-0 img-container" />
-                    <!-- Adjust only this image -->
+        
+        <!-- Section Content -->
+        <section>
+            <div class="flex flex-col inset-0 mt-[5%] ml-[16%] z-3">
+                <!--main div-->
+                <div style="font-family: 'Playwrite DE Grund', sans-serif" class="flex w-full">
+                    <div class="relative z-1">
+                        <img src="/static/images/Yellow_Highlight.svg" alt="" height="100" width="100"
+                            class="absolute -left-16 -top-16 z-0 img-container" />
+                        <!-- Adjust only this image -->
+                    </div>
+                    <img src="/static/images/Inventry_Box.svg" alt="" width="140" height="50" />
+                    <h1 style="font-size: 65px" class="ml-6 pt-14 z-10">
+                        “Simple, But! Efficient,
+                    </h1>
+                    <img src="/static/images/Box.svg" alt="" width="170" height="170" class="z-5" />
                 </div>
-                <img src="/static/images/Inventry_Box.svg" alt="" width="140" height="50" />
-                <h1 style="font-size: 65px" class="ml-6 pt-14 z-10">
-                    “Simple, But! Efficient,
-                </h1>
-                <img src="/static/images/Box.svg" alt="" width="170" height="170" class="z-5" />
+                <div style="font-family: 'Playwrite DE Grund', sans-serif" class="flex w-full">
+                    <h1 style="font-size: 65px" class="ml-[4%] z-10">
+                        Inventory Management System”
+                    </h1>
+                    <img src="/static/images/Scope.svg" alt="" width="100" height="100" />
+                </div>
+                <!--line 2-->
+                <div class="flex mb-4">
+                    <img class="ml-[10%]" src="/static/images/Notepad.svg" alt="" width="100" height="100" />
+                    <p class="font-poppins ml-[22%]" style="font-size: 30px">
+                        -where you can easily manage your data
+                    </p>
+                </div>
+                <!--line 3-->
             </div>
-            <div style="font-family: 'Playwrite DE Grund', sans-serif" class="flex w-full">
-                <h1 style="font-size: 65px" class="ml-[4%] z-10">
-                    Inventory Management System”
-                </h1>
-                <img src="/static/images/Scope.svg" alt="" width="100" height="100" />
+            <div class="ml-[46%] mt-12">
+                <button class="text-white px-8 py-4 rounded-lg hover:bg-blue-200 transition-colors duration-200 font-large"
+                    style="background-color: #134074">
+                    Try it for free
+                </button>
             </div>
-            <!--line 2-->
-            <div class="flex mb-4">
-                <img class="ml-[10%]" src="/static/images/Notepad.svg" alt="" width="100" height="100" />
-                <p class="font-poppins ml-[22%]" style="font-size: 30px">
-                    -where you can easily manage your data
-                </p>
-            </div>
-            <!--line 3-->
-        </div>
-        <div class="ml-[46%] mt-12">
-            <button class="text-white px-8 py-4 rounded-lg hover:bg-blue-200 transition-colors duration-200 font-large"
-                style="background-color: #134074">
-                Try it for free
-            </button>
-        </div>
+        </section>
     </section>
+        2 3  4
 </body>
 </html>
