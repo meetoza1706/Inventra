@@ -40,24 +40,29 @@
     </div>
     <script>
         function sendFormData() {
-            let username = document.getElementById('username').value;
-            let password = document.getElementById('password').value;
-
-                $.ajax({
-                    type: 'POST',
-                    url: '/login', 
-                    data: {
-                        username: username,
-                        password: password
-                    },
-                    success: function(response) {
-                        $('#result').html(response.message); 
-                    },
-                    error: function(error) {
-                        $('#result').html('Error occurred'); 
-                    }
-                });
+    let username = document.getElementById('username').value;
+    let password = document.getElementById('password').value;
+    
+    $.ajax({
+        type: 'POST',
+        url: '/login',
+        data: {
+            username: username,
+            password: password
+        },
+        success: function(response) {
+            // Check if logged in successfully
+            if (response.status === "success") {
+                window.location.href = '/';  // Redirect in JavaScript
+            } else {
+                $('#result').html(response.message);
+            }
+        },
+        error: function(error) {
+            $('#result').html('Error occurred');
         }
+    });
+}
     </script>
 </body>
 </html>

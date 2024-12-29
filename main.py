@@ -1,43 +1,110 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, make_response, session
+from flask_mysqldb import MySQL
+import uuid
+import datetime
+from flask_cors import CORS
 
 app = Flask(__name__)
+app.secret_key = '1707'
+CORS(app) 
 
-@app.route('/')
+# MySQL configurations
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'inventra'
+
+mysql = MySQL(app)
+
+@app.route('/', methods=['GET'])
 def home():
     return render_template('index.html')
 
-@app.route('/sign_up', methods=['POST','GET'])
+@app.route('/sign_up', methods=['POST', 'GET'])
 def sign_up():
-    username = request.form.get('username')
-    email = request.form.get('email')
-    password = request.form.get('password')
-    cpassword = request.form.get('cpassword')
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        cpassword = request.form.get('cpassword')
 
-    if username:
-        print(username,email,password,cpassword)
-        return jsonify({'message': f'Success for {username}.'})
+        if password == cpassword:
+            try:
+                cur = mysql.connection.cursor()
+                # Check if user already exists
+                query = "SELECT username, email FROM user_data WHERE username = %s AND email = %s"
+                cur.execute(query, (username, email))
+                user = cur.fetchone()
+
+                if user:
+                    return jsonify({"status": "failure", "message": "User already exists"}), 409
+                else:
+                    # Insert new user
+                    insert_query = "INSERT INTO user_data (username, email, password) VALUES (%s, %s, %s)"
+                    cur.execute(insert_query, (username, email, password))
+                    mysql.connection.commit()
+                    return jsonify({"status": "success", "message": "User registered successfully"}), 201
+            except Exception as err:
+                return jsonify({"status": "error", "message": str(err)}), 500
+            finally:
+                cur.close()
+        else:
+            return jsonify({"status": "failure", "message": "Passwords do not match"}), 400
     
     return render_template('sign_up.html')
 
-@app.route('/login', methods=['POST','GET'])
+@app.route('/login', methods=['POST', 'GET'])
 def login():
-    username = request.form.get('username')
-    password = request.form.get('password')
-    
-    if username and password:
-        print(username, password)
-        return jsonify({'message': f'Success for {username}.'})
-    
-    return render_template('login.html')
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        try:
+            cur = mysql.connection.cursor()
+            query = "SELECT * FROM user_data WHERE username = %s AND password = %s"
+            cur.execute(query, (username, password))
+            user = cur.fetchone()
+
+            if user:
+                print("you have logged in")
+
+                # Create session data
+                session_id = str(uuid.uuid4())  # Generate a unique session ID
+                login_time = datetime.datetime.now()
+                expiration_time = login_time + datetime.timedelta(hours=1)  # Example: session expires in 1 hour
+
+                # Insert session data into the sessions table
+                insert_query = "INSERT INTO sessions (session_id, user_id, login_time, expiration_time, is_active) VALUES (%s, %s, %s, %s, %s)"
+                cur.execute(insert_query, (session_id, user[0], login_time, expiration_time, 1))  # Adjust index for tuple
+                mysql.connection.commit()
+
+                session['session_id'] = session_id
+                print("session created")
+                return jsonify({"status": "success", "message": "Login successful"})
+
+            else:
+                print("no log in")
+                return jsonify({"status": "failure", "message": "Invalid username or password"}), 401
+
+        except Exception as err:
+            print("error", err)
+            return jsonify({"status": "error", "message": str(err)}), 500
+
+        finally:
+            cur.close()
+
+    return render_template('login.html')            
 
 @app.route('/test')
-def test():
-    return render_template('content.html')
+def test_db():
+    try:
+        return jsonify({"MySQL Version": "10.4.32-MariaDB"})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/test2')
 def test2():
     return render_template('dashboard.html')
 
 if __name__ == '__main__':
-    app.run(port=5000)
-    app.run(debug=True)
+    app.run(port=5000, debug=True)
