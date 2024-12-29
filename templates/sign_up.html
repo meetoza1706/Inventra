@@ -57,29 +57,32 @@
     </div>
     <script>
         function sendFormData() {
-            let username = document.getElementById('username').value;
-            let email = document.getElementById('email').value;
-            let password = document.getElementById('password').value;
-            let cpassword = document.getElementById('cpassword').value;
-
-            $.ajax({
-                type: 'POST',
-                url: '/sign_up',
-                data: {
-                    username: username,
-                    email: email,
-                    password: password,
-                    cpassword: cpassword
-                },
-                success: function(response) {
-                    $('#result').html(response.message);
-                },
-                error: function(error) {
-                    $('#result').html('Error occurred');
-                }
-            });
+    let username = document.getElementById('username').value;
+    let email = document.getElementById('email').value;
+    let password = document.getElementById('password').value;
+    let cpassword = document.getElementById('cpassword').value;
+    
+    $.ajax({
+        type: 'POST',
+        url: '/sign_up',
+        data: {
+            username: username,
+            email: email,
+            password: password,
+            cpassword: cpassword
+        },
+        success: function(response) {
+            if (response.status === "success") {
+                window.location.href = '/login';  // Add redirect on success
+            } else {
+                $('#result').html(response.message);
+            }
+        },
+        error: function(error) {
+            $('#result').html('Error occurred');
         }
-
+    });
+}
     </script>
 </body>
 </html>

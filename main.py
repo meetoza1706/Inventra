@@ -27,7 +27,7 @@ def sign_up():
         email = request.form.get('email')
         password = request.form.get('password')
         cpassword = request.form.get('cpassword')
-
+        
         if password == cpassword:
             try:
                 cur = mysql.connection.cursor()
@@ -35,7 +35,7 @@ def sign_up():
                 query = "SELECT username, email FROM user_data WHERE username = %s AND email = %s"
                 cur.execute(query, (username, email))
                 user = cur.fetchone()
-
+                
                 if user:
                     return jsonify({"status": "failure", "message": "User already exists"}), 409
                 else:
