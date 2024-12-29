@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 27, 2024 at 05:51 PM
+-- Generation Time: Dec 29, 2024 at 09:59 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -133,6 +133,27 @@ CREATE TABLE `order_data` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `sessions`
+--
+
+CREATE TABLE `sessions` (
+  `session_id` varchar(255) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `login_time` datetime NOT NULL,
+  `expiration_time` datetime NOT NULL,
+  `is_active` tinyint(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `sessions`
+--
+
+INSERT INTO `sessions` (`session_id`, `user_id`, `login_time`, `expiration_time`, `is_active`) VALUES
+('b37efed6-0ae9-408a-af89-f8263a35e5be', 1, '2024-12-29 14:27:31', '2024-12-29 15:27:31', 1);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `task_data`
 --
 
@@ -193,8 +214,17 @@ CREATE TABLE `user_data` (
   `last_login` timestamp NULL DEFAULT current_timestamp(),
   `creation_time_stamp` timestamp NOT NULL DEFAULT current_timestamp(),
   `first_name` varchar(100) DEFAULT NULL,
-  `last_name` varchar(100) DEFAULT NULL
+  `last_name` varchar(100) DEFAULT NULL,
+  `email` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_data`
+--
+
+INSERT INTO `user_data` (`user_id`, `company_id`, `role_id`, `company_name`, `username`, `password`, `last_login`, `creation_time_stamp`, `first_name`, `last_name`, `email`) VALUES
+(1, NULL, NULL, NULL, 'meet17', 'meet', '2024-12-28 04:34:47', '2024-12-28 04:34:47', NULL, NULL, 'ozamee17@gmail.com'),
+(5, NULL, NULL, NULL, 'admin', 'admin', '2024-12-28 06:23:59', '2024-12-28 06:23:59', NULL, NULL, 'admin@123');
 
 --
 -- Indexes for dumped tables
@@ -248,6 +278,12 @@ ALTER TABLE `order_data`
   ADD PRIMARY KEY (`order_id`);
 
 --
+-- Indexes for table `sessions`
+--
+ALTER TABLE `sessions`
+  ADD PRIMARY KEY (`session_id`);
+
+--
 -- Indexes for table `task_data`
 --
 ALTER TABLE `task_data`
@@ -271,7 +307,8 @@ ALTER TABLE `transaction_data`
 ALTER TABLE `user_data`
   ADD PRIMARY KEY (`user_id`),
   ADD UNIQUE KEY `username` (`username`),
-  ADD UNIQUE KEY `company_id` (`company_id`);
+  ADD UNIQUE KEY `company_id` (`company_id`),
+  ADD UNIQUE KEY `email` (`email`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -341,7 +378,7 @@ ALTER TABLE `transaction_data`
 -- AUTO_INCREMENT for table `user_data`
 --
 ALTER TABLE `user_data`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
