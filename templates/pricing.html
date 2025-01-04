@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing Section</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+
+    <nav class="flex flex-row items-center pt-4">
+        <div class="w-[40%]">
+            <img src="/static/images/landing_page_logo.svg" alt="Description of SVG" width="300px" height="30px"
+                class="pl-12" />
+        </div>
+        <div class="w-[60%]">
+            <ul class="flex flex-row gap-[12%]">
+                <li class="font-poppins text-xl font-bold pt-4">Overview</li>
+                <li class="font-poppins text-xl font-bold pt-4">Pricing</li>
+                <li class="font-poppins text-xl font-bold pt-4">Features</li>
+                <li class="font-poppins text-xl font-bold pt-4">About us</li>
+                <li>
+                    <button style="
+              background-color: #134074;
+              color: white;
+              padding: 8px 16px;
+              margin-top: 10px;
+              border-radius: 9999px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            " class="hover:bg-opacity-90">
+                        <a href="{{ url_for('login') }}" class="font-poppins text-xl font-bold text-white">Sign
+                            in</a>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+
+
+    <!-- Pricing Section -->
+    <section class="py-16 px-4">
+        <h2 class="text-4xl font-poppins font-bold text-center mb-20">Pricing</h2>
+        <div class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-6">
+            <!-- Per Day Card -->
+            <div class="bg-[#B5C2CA] rounded-3xl shadow-2xl p-6 w-72 text-center h-80 mt-8 ml-20">
+                <h3 class="text-2xl font-poppins font-medium mb-4">Per day</h3>
+                <ul class="mb-6">
+                    <li class="mb-2 mr-32">✔ Content 1</li>
+                    <li class="mb-2 mr-32">✔ Content 2</li>
+                    <li class="mb-2 mr-32">✔ Content 3</li>
+                    <li class="mb-2 mr-32">✔ Content 4</li>
+                    <li class="mb-2 mr-32">✔ Content 5</li>
+                    <li class="mr-32">✔ Content 6</li>
+                </ul>
+                <button class="text-2xl w-full bg-[#134074] rounded-lg text-white font-poppins font-bold">$5</button>
+            </div>
+
+            <!-- Per Annum Card -->
+            <div class="bg-[#B5C2CA]  rounded-3xl shadow-2xl p-6 w-80 text-center h-96 ml-6">
+                <h3 class="text-2xl font-poppins font-medium mb-4">Per annum</h3>
+                <ul class="mb-6">
+                    <li class="mb-4 mr-36">✔ Content 1</li>
+                    <li class="mb-4 mr-36">✔ Content 2</li>
+                    <li class="mb-4 mr-36">✔ Content 3</li>
+                    <li class="mb-4 mr-36">✔ Content 4</li>
+                    <li class="mb-4 mr-36">✔ Content 5</li>
+                    <li class="mr-36">✔ Content 6</li>
+                </ul>
+                <button
+                    class="text-2xl w-full bg-[#134074] rounded-lg text-white font-poppins font-bold mt-4">$1800</button>
+            </div>
+
+            <!-- Per Month Card -->
+            <div class="bg-[#B5C2CA] rounded-3xl shadow-2xl p-6 w-72 text-center h-80 mt-8">
+                <h3 class="text-2xl font-poppins font-medium mb-4">Per month</h3>
+                <ul class="mb-6">
+                    <li class="mb-2 mr-32">✔ Content 1</li>
+                    <li class="mb-2 mr-32">✔ Content 2</li>
+                    <li class="mb-2 mr-32">✔ Content 3</li>
+                    <li class="mb-2 mr-32">✔ Content 4</li>
+                    <li class="mb-2 mr-32">✔ Content 5</li>
+                    <li class="mr-32">✔ Content 6</li>
+                </ul>
+                <button class="text-2xl w-full bg-[#134074] rounded-lg text-white font-poppins font-bold">$150</button>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Footer -->
+    <section class="py-6">
+        <footer
+            class="container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm text-black rounded-lg p-4 bg-[#B5C2CA]">
+            <!-- Logo Section -->
+            <div class="flex justify-center items-center">
+                <img src="C:\Users\vyasm\OneDrive\Desktop\frontend\Inventra Logo-19.png" alt="Inventra Logo"
+                    class="w-24 h-auto">
+            </div>
+
+            <!-- Quick Links -->
+            <div>
+                <h1 class="font-semibold mb-2 text-black text-2xl">Quick Links</h1>
+                <ul class="space-y-4">
+                    <li><a href="#" class="hover:underline text-black">Overview</a></li>
+                    <li><a href="#" class="hover:underline text-black">Pricing</a></li>
+                    <li><a href="#" class="hover:underline text-black">Features</a></li>
+                    <li><a href="#" class="hover:underline text-black">About Us</a></li>
+                </ul>
+            </div>
+
+            <!-- Legal -->
+            <div>
+                <h1 class="font-semibold mb-2 text-black text-2xl">Legal</h1>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:underline text-black">Privacy Policy</a></li>
+                    <li><a href="#" class="hover:underline text-black">Terms & Conditions</a></li>
+                </ul>
+            </div>
+
+            <!-- Social Media -->
+            <div class="text-center">
+                <h2 class="font-semibold mb-4 text-xl sm:text-2xl text-black">Connect with us on</h2>
+                <div class="flex justify-center space-x-4">
+                    <div class="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
+                    </div>
+                    <div class="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
+                    </div>
+                    <div class="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Text -->
+            <div class="text-center text-xl mt-6 text-black">
+                © 2024 Inventra. All rights reserved.
+            </div>
+        </footer>
+    </section>
+</body>
+
+</html>

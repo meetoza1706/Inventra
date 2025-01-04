@@ -95,16 +95,14 @@ def login():
 
     return render_template('login.html')            
 
-@app.route('/test')
-def test_db():
-    try:
-        return jsonify({"MySQL Version": "10.4.32-MariaDB"})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+@app.route('/company_find', methods=['POST', 'GET'])
+def company_find():
+    return render_template('company_find.html')
 
-@app.route('/test2')
-def test2():
-    return render_template('dashboard.html')
+@app.route('/company_register')
+def companY_register():
+    return render_template('company_register.html')
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
+ 

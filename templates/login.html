@@ -53,7 +53,7 @@
         success: function(response) {
             // Check if logged in successfully
             if (response.status === "success") {
-                window.location.href = '/';  // Redirect in JavaScript
+                window.location.href = '/company_find';  // Redirect in JavaScript
             } else {
                 $('#result').html(response.message);
             }

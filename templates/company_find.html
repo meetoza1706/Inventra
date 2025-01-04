@@ -59,7 +59,7 @@
               <!-- Search Icon (black color) -->
               <i class="fa-solid fa-search text-black mr-3"></i>
               <!-- Input Text -->
-              <input type="text" placeholder="Search your company name..." class="w-full h-full bg-transparent outline-none text-gray-700 placeholder-gray-500" />
+              <input type="text" placeholder="Search your company name..." id="searchbox" class="w-full h-full bg-transparent outline-none text-gray-700 placeholder-gray-500" />
             </div>
             
           </div>
@@ -74,5 +74,29 @@
       </div>
     </div>
   </div>
+  <script>
+    function sendFormData() {
+    let search = document.getElementById('searchbox').value;
+
+    $.ajax({
+        type: 'POST',
+        url: '/company_find',
+        data: {
+            search: search 
+        },
+        success: function(response) {
+            // Check if logged in successfully
+            if (response.status === "success") {
+                window.location.href = '/company_find';  // Redirect in JavaScript
+            } else {
+                $('#result').html(response.message);
+            }
+        },
+        error: function(error) {
+            $('#result').html('Error occurred');
+        }
+    });
+    }
+</script>
 </body>
 </html>

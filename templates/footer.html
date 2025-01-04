@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Footer Section</title>
+  <!-- Google Fonts: Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="font-poppins">
+  <section class="py-6">
+    <footer class="container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm text-black rounded-lg p-4 bg-[#B5C2CA]">
+      <!-- Logo Section -->
+      <div class="flex justify-center items-center">
+        <img src="C:\Users\vyasm\OneDrive\Desktop\frontend\Inventra Logo-19.png" alt="Inventra Logo" class="w-24 h-auto">
+      </div>
+      
+      <!-- Quick Links -->
+      <div>
+        <h1 class="font-semibold mb-2 text-black text-2xl">Quick Links</h1>
+        <ul class="space-y-4">
+          <li><a href="#" class="hover:underline text-black">Overview</a></li>
+          <li><a href="#" class="hover:underline text-black">Pricing</a></li>
+          <li><a href="#" class="hover:underline text-black">Features</a></li>
+          <li><a href="#" class="hover:underline text-black">About Us</a></li>
+        </ul>
+      </div>
+  
+      <!-- Legal -->
+      <div>
+        <h1 class="font-semibold mb-2 text-black text-2xl">Legal</h1>
+        <ul class="space-y-2">
+          <li><a href="#" class="hover:underline text-black">Privacy Policy</a></li>
+          <li><a href="#" class="hover:underline text-black">Terms & Conditions</a></li>
+        </ul>
+      </div>
+  
+      <!-- Social Media -->
+      <div class="text-center">
+        <h2 class="font-semibold mb-4 text-xl sm:text-2xl text-black">Connect with us on</h2>
+        <div class="flex justify-center space-x-4">
+          <div class="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
+          </div>
+          <div class="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
+          </div>
+          <div class="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
+          </div>
+        </div>
+      </div>
+  
+      <!-- Footer Text -->
+      <div class="text-center text-xl mt-6 text-black">
+        © 2024 Inventra. All rights reserved.
+      </div>
+    </footer>
+  </section>
+</body>
+</html>
