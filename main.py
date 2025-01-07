@@ -51,7 +51,7 @@ def sign_up():
         else:
             return jsonify({"status": "failure", "message": "Passwords do not match"}), 400
     
-    return render_template('sign_up.html')
+    return render_template('sign_up.html')  
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
@@ -93,16 +93,55 @@ def login():
         finally:
             cur.close()
 
-    return render_template('login.html')            
+    return render_template('login.html')       
+
+@app.route('/company_register', methods=['POST', 'GET'])
+def company_register():
+    if request.method == 'POST':
+        # Get form data
+        company_name = request.form.get('company_name')
+        website = request.form.get('website')
+        email = request.form.get('email')
+        established_date = request.form.get('established_date')
+        contact_number = request.form.get('contact_number')
+        status = request.form.get('status')
+
+        try:
+            cur = mysql.connection.cursor()
+
+            # Check if company already exists
+            query = "SELECT company_name, email FROM company_data WHERE company_name = %s AND email = %s"
+            cur.execute(query, (company_name, email))
+            company = cur.fetchone()
+
+            if company:
+                return jsonify({"status": "failure", "message": "Company already exists"}), 409
+
+            # Insert new company data
+            insert_query = """
+                INSERT INTO company_data (company_name, email, contact_number, website, date_established, status)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            cur.execute(insert_query, (company_name, email, contact_number, website, established_date, status))
+            mysql.connection.commit()
+
+            return jsonify({"status": "success", "message": "Company registered successfully"}), 201
+        except Exception as err:
+            return jsonify({"status": "error", "message": str(err)}), 500
+        finally:
+            cur.close()
+
+    return render_template('company_register.html')
+
+
+
 
 @app.route('/company_find', methods=['POST', 'GET'])
 def company_find():
+    if request.method == 'POST':
+        search = request.form.get('search')
+        print(search)
     return render_template('company_find.html')
 
-@app.route('/company_register')
-def companY_register():
-    return render_template('company_register.html')
-
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
- 
+    app.run(port=5000, debug=True) 

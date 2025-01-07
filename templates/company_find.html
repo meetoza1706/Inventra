@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script> <!-- Include jQuery -->
   <style>
     /* Apply Poppins font to the entire body */
     body {
@@ -47,7 +48,7 @@
   <div class="w-full h-full flex items-center justify-center">
     <div class="w-full max-w-2xl  rounded-8xl p-4 mt-5 main-container">
       <div class="rounded-3xl bg-[#B5C2CA] py-4">
-        <div >
+        <div>
           <p class="text-2xl font-bold text-center pb-2">
             FIND YOUR COMPANY
           </p>
@@ -61,7 +62,6 @@
               <!-- Input Text -->
               <input type="text" placeholder="Search your company name..." id="searchbox" class="w-full h-full bg-transparent outline-none text-gray-700 placeholder-gray-500" />
             </div>
-            
           </div>
           <div class="py-8 w-full h-10 rounded-2xl bg-[#E8EFFF] mt-32 flex items-center justify-start pl-8">
             <!-- Add Icon -->
@@ -69,34 +69,37 @@
             <!-- Text -->
             <div>Create your company</div>
           </div>
-          
         </div>
       </div>
     </div>
   </div>
   <script>
-    function sendFormData() {
-    let search = document.getElementById('searchbox').value;
-
-    $.ajax({
-        type: 'POST',
-        url: '/company_find',
-        data: {
-            search: search 
-        },
-        success: function(response) {
-            // Check if logged in successfully
-            if (response.status === "success") {
-                window.location.href = '/company_find';  // Redirect in JavaScript
-            } else {
-                $('#result').html(response.message);
-            }
-        },
-        error: function(error) {
-            $('#result').html('Error occurred');
+    // Add event listener for Enter key
+    document.getElementById('searchbox').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            sendFormData(); // Call the function
         }
     });
+
+    function sendFormData() {
+        let search = document.getElementById('searchbox').value;
+
+        $.ajax({
+            type: 'POST',
+            url: '/company_find',
+            data: { search: search },
+            success: function(response) {
+                if (response.status === "success") {
+                  console.log("done")
+                } else {
+                    console.log(response.message); // Using alert for simplicity
+                }
+            },
+            error: function(error) {
+                alert('Error occurred');
+            }
+        });
     }
-</script>
+  </script>
 </body>
 </html>
