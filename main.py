@@ -1,12 +1,12 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, make_response, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_mysqldb import MySQL
 import uuid
 import datetime
 from flask_cors import CORS
 
 app = Flask(__name__)
-app.secret_key = '1707'
-CORS(app) 
+app.secret_key = '1707'  # Use a strong secret key
+CORS(app)
 
 # MySQL configurations
 app.config['MYSQL_HOST'] = 'localhost'
@@ -18,7 +18,11 @@ mysql = MySQL(app)
 
 @app.route('/', methods=['GET'])
 def home():
+    # If user is already logged in, redirect to dashboard
+    if session.get('user_logged_in'):
+        return redirect(url_for('dashboard'))
     return render_template('index.html')
+
 
 @app.route('/sign_up', methods=['POST', 'GET'])
 def sign_up():
@@ -55,6 +59,10 @@ def sign_up():
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
+    # Check if the user is already logged in, if so, redirect to the dashboard
+    if session.get('user_logged_in'):
+        return jsonify({"status": "success", "message": "Already logged in"}), 200
+
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -66,39 +74,42 @@ def login():
             user = cur.fetchone()
 
             if user:
-                print("you have logged in")
-
                 # Create session data
                 session_id = str(uuid.uuid4())  # Generate a unique session ID
                 login_time = datetime.datetime.now()
-                expiration_time = login_time + datetime.timedelta(hours=1)  # Example: session expires in 1 hour
+                expiration_time = login_time + datetime.timedelta(hours=1)  # Session expires in 1 hour
 
                 # Insert session data into the sessions table
                 insert_query = "INSERT INTO sessions (session_id, user_id, login_time, expiration_time, is_active) VALUES (%s, %s, %s, %s, %s)"
-                cur.execute(insert_query, (session_id, user[0], login_time, expiration_time, 1))  # Adjust index for tuple
+                cur.execute(insert_query, (session_id, user[0], login_time, expiration_time, 1))
                 mysql.connection.commit()
 
                 session['session_id'] = session_id
-                print("session created")
-                return jsonify({"status": "success", "message": "Login successful"})
+                session['user_logged_in'] = True
+                session['username'] = username  # Store username in session
 
+                # Return success status
+                return jsonify({"status": "success", "message": "Login successful"}), 200
             else:
-                print("no log in")
                 return jsonify({"status": "failure", "message": "Invalid username or password"}), 401
 
         except Exception as err:
-            print("error", err)
             return jsonify({"status": "error", "message": str(err)}), 500
-
         finally:
             cur.close()
 
-    return render_template('login.html')       
+    return render_template('login.html')  # If GET request, render login page
+
+
+@app.route('/logout')
+def logout():
+    session.clear()  # Clear all session ata
+    return redirect(url_for('login'))  # Redirect to login page after logout
+
 
 @app.route('/company_register', methods=['POST', 'GET'])
 def company_register():
     if request.method == 'POST':
-        # Get form data
         company_name = request.form.get('company_name')
         website = request.form.get('website')
         email = request.form.get('email')
@@ -117,7 +128,6 @@ def company_register():
             if company:
                 return jsonify({"status": "failure", "message": "Company already exists"}), 409
 
-            # Insert new company data
             insert_query = """
                 INSERT INTO company_data (company_name, email, contact_number, website, date_established, status)
                 VALUES (%s, %s, %s, %s, %s, %s)
@@ -142,6 +152,10 @@ def company_find():
 
 @app.route('/dashboard')
 def dashboard():
+    # Check if session exists, if not, redirect to login
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+
     return render_template('dashboard.html')
 
 @app.route('/test')
@@ -149,4 +163,4 @@ def test():
     return render_template('test.html')
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True) 
+    app.run(port=5000, debug=True)

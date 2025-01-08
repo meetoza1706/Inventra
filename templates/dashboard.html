@@ -35,7 +35,7 @@ style="background-color: #ffffff;">
         <div class="text-gray-600 font-medium ml-4 mr-4">Company Name</div>
         <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" type="button">
           <span class="sr-only">Open user menu</span>
-          <div class="user-avatar">U</div>
+          <div class="user-avatar">M</div>
         </button>      
         <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
           <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
@@ -46,7 +46,7 @@ style="background-color: #ffffff;">
               <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">@company_name</a>
             </li>
             <li>
-              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"><button>logout</button></a>
+              <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">logout</a>
             </li>
           </ul>
       </div>

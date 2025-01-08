@@ -40,29 +40,32 @@
     </div>
     <script>
         function sendFormData() {
-    let username = document.getElementById('username').value;
-    let password = document.getElementById('password').value;
+            let username = document.getElementById('username').value;
+            let password = document.getElementById('password').value;
     
-    $.ajax({
-        type: 'POST',
-        url: '/login',
-        data: {
-            username: username,
-            password: password
-        },
-        success: function(response) {
-            // Check if logged in successfully
-            if (response.status === "success") {
-                window.location.href = '/company_find';  // Redirect in JavaScript
-            } else {
-                $('#result').html(response.message);
-            }
-        },
-        error: function(error) {
-            $('#result').html('Error occurred');
+            $.ajax({
+                type: 'POST',
+                url: '/login',
+                data: {
+                    username: username,
+                    password: password
+                },
+                contentType: 'application/x-www-form-urlencoded',  // Content type for form data
+                dataType: 'json',  // Expect JSON response
+                success: function(response) {
+                    // Check if logged in successfully
+                    if (response.status === "success") {
+                        window.location.href = '/dashboard';  // Redirect to dashboard on successful login
+                    } else {
+                        $('#result').html(response.message);  // Display failure message
+                    }
+                },
+                error: function(error) {
+                    $('#result').html('Error occurred');  // Display error message if AJAX fails
+                }
+            });
         }
-    });
-}
     </script>
+    
 </body>
 </html>
