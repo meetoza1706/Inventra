@@ -133,15 +133,20 @@ def company_register():
 
     return render_template('company_register.html')
 
-
-
-
 @app.route('/company_find', methods=['POST', 'GET'])
 def company_find():
     if request.method == 'POST':
         search = request.form.get('search')
         print(search)
     return render_template('company_find.html')
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/test')
+def test():
+    return render_template('test.html')
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True) 

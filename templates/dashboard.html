@@ -8,22 +8,48 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />
   <style>
-    /* Apply Poppins font to the entire body */
-    body {
-      font-family: 'Poppins', sans-serif;
+    .user-avatar {
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #4b5563; /* Gray-800 */
+        color: white;
+        border-radius: 50%;
+        font-size: 0.875rem; /* Text-sm */
+        font-weight: bold;
     }
-  </style>
+</style>
 </head>
 <body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0"
 style="background-color: #ffffff;">
+
   <!-- Header -->
   <div class="mt-5 w-full flex justify-between items-center px-5">
-    <div class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
+    <div id="time-display" class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
     <div class="flex items-center">
       <div class="flex items-center">
         <div class="text-gray-600 font-medium ml-4 mr-4">Company Name</div>
-        <div class="w-9 h-7 bg-gray-300 rounded-3xl px-2.5 m-2"><i class="fa-solid fa-user"></i></div>
+        <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" type="button">
+          <span class="sr-only">Open user menu</span>
+          <div class="user-avatar">U</div>
+        </button>      
+        <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
+          <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, @username</a>
+            </li>
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">@company_name</a>
+            </li>
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"><button>logout</button></a>
+            </li>
+          </ul>
+      </div>
       </div>
     </div>
   </div>
@@ -48,5 +74,20 @@ style="background-color: #ffffff;">
       </div>
     </div>
   </div>
+  <script>
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours() % 12 || 12; // Convert to 12-hour format, 0 becomes 12
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
+      
+      // Update the div content
+      document.getElementById('time-display').textContent = time;
+    }
+    
+    updateTime(); // Show time immediately
+    setInterval(updateTime, 5000); // Refresh every 5 seconds
+    </script>
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
 </body>
 </html>
