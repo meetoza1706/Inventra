@@ -22,6 +22,17 @@
         font-size: 0.875rem; /* Text-sm */
         font-weight: bold;
     }
+
+    /* Ensures the content stays within the viewport */
+    body {
+        height: 100vh;
+        overflow: hidden;  /* Prevents vertical scrolling */
+    }
+
+    .dashboard-content {
+        overflow-y: auto;  /* Enables vertical scrolling within this section if content overflows */
+        height: calc(100vh - 80px);  /* Adjust for header height */
+    }
 </style>
 </head>
 <body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0"
@@ -40,7 +51,7 @@ style="background-color: #ffffff;">
         <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
           <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
             <li>
-              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, @username</a>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, {{ first_name if first_name else username }}</a>
             </li>
             <li>
               <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">@company_name</a>
@@ -55,7 +66,7 @@ style="background-color: #ffffff;">
   </div>
 
   <!-- Content Row -->
-  <div class="mt-40">
+  <div class="dashboard-content mt-[15%]">
     <div class="flex px-3 w-full items-center justify-center gap-14">
       <div class="w-32 h-28 bg-[#C7DAE5] border border-blue-300 rounded-3xl flex items-center justify-center">
         Content-1
@@ -74,6 +85,7 @@ style="background-color: #ffffff;">
       </div>
     </div>
   </div>
+
   <script>
     function updateTime() {
       const now = new Date();
@@ -87,7 +99,8 @@ style="background-color: #ffffff;">
     
     updateTime(); // Show time immediately
     setInterval(updateTime, 5000); // Refresh every 5 seconds
-    </script>
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
 </body>
 </html>

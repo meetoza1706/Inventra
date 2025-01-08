@@ -156,7 +156,29 @@ def dashboard():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
 
-    return render_template('dashboard.html')
+    username = session.get('username', None)
+    
+    # Fetch user information (including first_name) from the database
+    try:
+        cur = mysql.connection.cursor()
+        query = "SELECT first_name FROM user_data WHERE username = %s"
+        cur.execute(query, (username,))
+        user = cur.fetchone()
+
+        # Check if user exists
+        if user:
+            first_name = user[0]  # Fetch the first_name from DB
+        else:
+            first_name = None
+
+    except Exception as e:
+        first_name = None
+        print(f"Error fetching first name: {e}")
+
+    finally:
+        cur.close()
+
+    return render_template('dashboard.html', username=username, first_name=first_name)
 
 @app.route('/test')
 def test():
