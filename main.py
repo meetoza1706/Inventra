@@ -152,33 +152,34 @@ def company_find():
 
 @app.route('/dashboard')
 def dashboard():
-    # Check if session exists, if not, redirect to login
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
 
     username = session.get('username', None)
-    
-    # Fetch user information (including first_name) from the database
+    user_id, first_name, company_name = None, None, None
+
     try:
         cur = mysql.connection.cursor()
-        query = "SELECT first_name FROM user_data WHERE username = %s"
-        cur.execute(query, (username,))
+
+        # Fetch first_name and user_id from user_data table
+        cur.execute("SELECT first_name, user_id FROM user_data WHERE username = %s", (username,))
         user = cur.fetchone()
-
-        # Check if user exists
         if user:
-            first_name = user[0]  # Fetch the first_name from DB
-        else:
-            first_name = None
+            first_name, user_id = user
 
+        # Fetch company_name from company_data table if user_id exists
+        if user_id:
+            cur.execute("SELECT company_name FROM company_data WHERE user_id = %s", (user_id,))
+            company = cur.fetchone()
+            if company:
+                company_name = company[0]
     except Exception as e:
-        first_name = None
-        print(f"Error fetching first name: {e}")
-
+        print(f"Error fetching data: {e}")
     finally:
         cur.close()
 
-    return render_template('dashboard.html', username=username, first_name=first_name)
+    return render_template('dashboard.html', username=username, first_name=first_name, company_name=company_name)
+
 
 @app.route('/test')
 def test():

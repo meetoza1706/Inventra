@@ -43,7 +43,7 @@ style="background-color: #ffffff;">
     <div id="time-display" class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
     <div class="flex items-center">
       <div class="flex items-center">
-        <div class="text-gray-600 font-medium ml-4 mr-4">Company Name</div>
+        <div class="text-gray-600 font-medium ml-4 mr-4"><a href="{{ url_for('company_find') }}">{{ company_name if company_name else "Join your company!" }}</a></div>
         <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" type="button">
           <span class="sr-only">Open user menu</span>
           <div class="user-avatar">M</div>
@@ -54,7 +54,7 @@ style="background-color: #ffffff;">
               <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, {{ first_name if first_name else username }}</a>
             </li>
             <li>
-              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">@company_name</a>
+              <a href="{{ url_for('company_find') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{{ company_name if company_name else "Join your company!" }}</a>
             </li>
             <li>
               <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">logout</a>
