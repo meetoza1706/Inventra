@@ -84,9 +84,11 @@ def login():
                 cur.execute(insert_query, (session_id, user[0], login_time, expiration_time, 1))
                 mysql.connection.commit()
 
+                # Store session data
                 session['session_id'] = session_id
                 session['user_logged_in'] = True
                 session['username'] = username  # Store username in session
+                session['user_id'] = user[0]  # Store user_id in session
 
                 # Return success status
                 return jsonify({"status": "success", "message": "Login successful"}), 200
@@ -98,7 +100,7 @@ def login():
         finally:
             cur.close()
 
-    return render_template('login.html')  # If GET request, render login page
+    return render_template('login.html')
 
 
 @app.route('/logout')
@@ -127,12 +129,15 @@ def company_register():
 
             if company:
                 return jsonify({"status": "failure", "message": "Company already exists"}), 409
+            
+            user_id = session.get('user_id')
+            print(user_id)
 
             insert_query = """
-                INSERT INTO company_data (company_name, email, contact_number, website, date_established, status)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO company_data (company_name, email, contact_number, website, date_established, status, user_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cur.execute(insert_query, (company_name, email, contact_number, website, established_date, status))
+            cur.execute(insert_query, (company_name, email, contact_number, website, established_date, status, user_id))
             mysql.connection.commit()
 
             return jsonify({"status": "success", "message": "Company registered successfully"}), 201
@@ -145,10 +150,27 @@ def company_register():
 
 @app.route('/company_find', methods=['POST', 'GET'])
 def company_find():
+    companies = None  # Variable to store the search results
+
     if request.method == 'POST':
-        search = request.form.get('search')
-        print(search)
-    return render_template('company_find.html')
+        search = request.form.get('search')  # Get search query from form
+
+        try:
+            cur = mysql.connection.cursor()
+
+            # SQL query to search for companies by name (case-insensitive search)
+            query = "SELECT company_name, email FROM company_data WHERE company_name LIKE %s"
+            cur.execute(query, ('%' + search + '%',))  # Search using LIKE with % for partial match
+            companies = cur.fetchall()  # Fetch all matching companies
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return "An error occurred", 500
+        finally:
+            if 'cur' in locals():
+                cur.close()
+
+    return render_template('company_find.html', companies=companies)
 
 @app.route('/dashboard')
 def dashboard():

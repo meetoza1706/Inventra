@@ -14,8 +14,32 @@
     }
     html, body {
       height: 100%;
-      overflow: hidden;
+      overflow: hidden;  
+     }
+    .user-avatar {
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #4b5563; /* Gray-800 */
+        color: white;
+        border-radius: 50%;
+        font-size: 0.875rem; /* Text-sm */
+        font-weight: bold;
     }
+
+    /* Ensures the content stays within the viewport */
+    body {
+        height: 100vh;
+        overflow: hidden;  /* Prevents vertical scrolling */
+    }
+
+    .dashboard-content {
+        overflow-y: auto;  /* Enables vertical scrolling within this section if content overflows */
+        height: calc(100vh - 80px);  /* Adjust for header height */
+    }
+
   </style>
 </head>
 <body class="relative w-full h-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0"
@@ -23,9 +47,28 @@ style="background-color: #ffffff">
 
   <!-- Header -->
   <div class="mt-5 w-full flex justify-between items-center px-5">
-    <div class="px-3 bg-[#13315C] text-white text-xl rounded-xl text-3xl">12:12</div>
+    <div id="time-display" class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
     <div class="flex items-center">
-      <i class="fa-solid fa-user border-2 rounded-3xl bg-[#b5c2ca] p-2"></i>
+      <div class="flex items-center">
+        <div class="text-gray-600 font-medium ml-4 mr-4"><a href="{{ url_for('company_find') }}"></a></div>
+        <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" type="button">
+          <span class="sr-only">Open user menu</span>
+          <div class="user-avatar">M</div>
+        </button>      
+        <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
+          <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, {{ first_name if first_name else username }}</a>
+            </li>
+            <li>
+              <a href="{{ url_for('company_find') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{{ company_name if company_name else "Join your company!" }}</a>
+            </li>
+            <li>
+              <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">logout</a>
+            </li>
+          </ul>
+      </div>
+      </div>
     </div>
   </div>
 
@@ -84,7 +127,7 @@ style="background-color: #ffffff">
     </div>
   </div>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
   <script>
     function sendFormData() {
         let company_name = document.getElementById('company-name').value;
@@ -108,6 +151,7 @@ style="background-color: #ffffff">
             success: function(response) {
                 if (response.status === "success") {
                     console.log("Company registration successful!");
+                    window.location.href = '/company_find';
                     // You can redirect or handle success here as needed
                 } else {
                     console.log(response.message); // Log the error message
@@ -118,6 +162,21 @@ style="background-color: #ffffff">
             }
         });
     }
+</script>
+
+<script>
+  function updateTime() {
+    const now = new Date();
+    let hours = now.getHours() % 12 || 12; // Convert to 12-hour format, 0 becomes 12
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const time = `${String(hours).padStart(2, '0')}:${minutes}`;
+    
+    // Update the div content
+    document.getElementById('time-display').textContent = time;
+  }
+  
+  updateTime(); // Show time immediately
+  setInterval(updateTime, 5000); // Refresh every 5 seconds
 </script>
 
 </body>

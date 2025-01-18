@@ -13,93 +13,154 @@
     /* Apply Poppins font to the entire body */
     body {
       font-family: 'Poppins', sans-serif;
-    }
-
-    /* Prevent body overflow */
-    body {
       margin: 0;
       padding: 0;
       height: 100%;
-      overflow: hidden;
     }
 
     /* Fix overflow on the main container */
     .main-container {
-      height: 100%;
       overflow-y: auto;
     }
+    .user-avatar {
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #4b5563; /* Gray-800 */
+        color: white;
+        border-radius: 50%;
+        font-size: 0.875rem; /* Text-sm */
+        font-weight: bold;
+    }
+
+    /* Ensures the content stays within the viewport */
+    body {
+        height: 100vh;
+        overflow: hidden;  /* Prevents vertical scrolling */
+    }
+
+    .dashboard-content {
+        overflow-y: auto;  /* Enables vertical scrolling within this section if content overflows */
+        height: calc(100vh - 80px);  /* Adjust for header height */
+    }
+
   </style>
 </head>
-<body class="relative w-full h-[110vh] bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0" style="background-color: #ffffff">
+<body class="relative w-full min-h-screen bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0" style="background-color: #ffffff">
 
   <!-- Header -->
-  <div class="mt-5 w-full flex justify-between items-center px-5 rounded-lg mb-24 ">
-    <div class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
+  <div class="mt-5 w-full flex justify-between items-center px-5">
+    <div id="time-display" class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
     <div class="flex items-center">
       <div class="flex items-center">
-        <div class="w-9 h-7 bg-gray-300 rounded-3xl px-2.5 m-2">
-          <i class="fa-solid fa-user"></i>
-        </div>
+        <div class="text-gray-600 font-medium ml-4 mr-4"><a href="{{ url_for('company_find') }}"></a></div>
+        <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" type="button">
+          <span class="sr-only">Open user menu</span>
+          <div class="user-avatar">M</div>
+        </button>      
+        <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
+          <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
+            <li>
+              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, {{ first_name if first_name else username }}</a>
+            </li>
+            <li>
+              <a href="{{ url_for('company_find') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{{ company_name if company_name else "Join your company!" }}</a>
+            </li>
+            <li>
+              <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">logout</a>
+            </li>
+          </ul>
+      </div>
       </div>
     </div>
   </div>
-  
 
   <div class="w-full h-full flex items-center justify-center">
-    <div class="w-full max-w-2xl  rounded-8xl p-4 mt-5 main-container">
+    <div class="w-full max-w-2xl rounded-8xl p-4 mt-5 main-container">
       <div class="rounded-3xl bg-[#B5C2CA] py-4">
         <div>
-          <p class="text-2xl font-bold text-center pb-2">
-            FIND YOUR COMPANY
-          </p>
+          <p class="text-xl font-bold text-center pb-2">FIND YOUR COMPANY</p>
         </div>
         <hr>
         <div class="px-4">
-          <div class="py-1 pt-8">
-            <div class="w-full h-10 bg-white flex items-center justify-start pl-7 rounded-xl">
-              <!-- Search Icon (black color) -->
-              <i class="fa-solid fa-search text-black mr-3"></i>
-              <!-- Input Text -->
-              <input type="text" placeholder="Search your company name..." id="searchbox" class="w-full h-full bg-transparent outline-none text-gray-700 placeholder-gray-500" />
+          <form method="POST">
+            <div class="py-1 pt-8">
+              <div class="w-full h-10 bg-white flex items-center justify-start pl-7 rounded-xl">
+                <i class="fa-solid fa-search text-black mr-3"></i>
+                <input id="searchbox" type="text" placeholder="Search your company name..." name="search" class="w-full h-full bg-transparent outline-none text-gray-700 placeholder-gray-500" required />
+              </div>
+            </div>
+          </form>
+
+          <!-- Show Results if companies are found -->
+          {% if companies %}
+          <div class="mt-8">
+            <h2 class="text-xl font-bold">Search Results:</h2>
+            <div class="py-8 flex flex-col space-y-4">
+              {% for company in companies %}
+              <div class="w-full flex items-center justify-between bg-[#E8EFFF] py-3 px-6 rounded-xl shadow-md">
+                <div class="text-gray-700 text-lg">{{ company[0] }}</div>
+                <button class="bg-[#13315C] text-white px-6 py-1 rounded-lg font-semibold">Join</button>
+              </div>
+              {% endfor %}
             </div>
           </div>
-          <div class="py-8 w-full h-10 rounded-2xl bg-[#E8EFFF] mt-32 flex items-center justify-start pl-8">
-            <!-- Add Icon -->
+          {% elif companies is not none %}
+          <p class="text-red-500 mt-4">No companies found matching your search.</p>
+          {% endif %}
+
+          <div class="py-8 w-full h-10 rounded-2xl bg-[#E8EFFF] mt-2 flex items-center justify-start pl-8">
             <i class="fa-solid fa-plus text-black mr-3"></i>
-            <!-- Text -->
             <div><a href="{{ url_for('company_register') }}">Create your company</a></div>
           </div>
         </div>
       </div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
   <script>
     // Add event listener for Enter key
     document.getElementById('searchbox').addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            sendFormData(); // Call the function
-        }
+      if (event.key === 'Enter') {
+        sendFormData(); // Call the function
+      }
     });
 
     function sendFormData() {
-        let search = document.getElementById('searchbox').value;
+      let search = document.getElementById('searchbox').value;
 
-        $.ajax({
-            type: 'POST',
-            url: '/company_find',
-            data: { search: search },
-            success: function(response) {
-                if (response.status === "success") {
-                  console.log("done")
-                } else {
-                    console.log(response.message); // Using alert for simplicity
-                }
-            },
-            error: function(error) {
-                alert('Error occurred');
-            }
-        });
+      $.ajax({
+        type: 'POST',
+        url: '/company_find',
+        data: { search: search },
+        success: function(response) {
+          if (response.status === "success") {
+            console.log("done");
+          } else {
+            console.log(response.message); // Using console.log for simplicity
+          }
+        },
+        error: function(error) {
+          alert('Error occurred');
+        }
+      });
     }
+  </script>
+  <script>
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours() % 12 || 12; // Convert to 12-hour format, 0 becomes 12
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
+
+      // Update the div content
+      document.getElementById('time-display').textContent = time;
+    }
+
+    updateTime(); // Show time immediately
+    setInterval(updateTime, 5000); // Refresh every 5 seconds
   </script>
 </body>
 </html>
