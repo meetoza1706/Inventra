@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+  <title>Profile</title>
+</head>
+<body class="relative w-full h-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0"
+style="background-color: #ffffff">
+
+<!-- Header -->
+  <div class="mt-5 w-full flex justify-between items-center px-5 mb-8">
+    <div class="px-3 bg-[#13315C] text-white text-xl rounded-xl text-3xl flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        BACK TO DASHBOARD
+    </div>
+    
+
+     
+    </div>
+  </div>
+   
+ <!-- Form -->
+<div class="flex justify-center h-auto mt-24 drop-shadow-2xl">
+  <div class="bg-[#b5c2ca] w-[80%] max-w-4xl rounded-3xl shadow-lg p-10">
+    
+    <div class="flex items-center justify-center">
+        <div class="flex items-center justify-center border-2 rounded-full bg-[#b5c2ca] p-6" style="width: 120px; height: 120px;">
+          <i class="fa-solid fa-user text-white text-5xl"></i>
+        </div>
+    </div>
+      
+    <form class="mt-4">
+      <div class="grid grid-cols-2 gap-6">
+        <!-- First Name -->
+        <div>
+          <label for="first_name" class="text-lg">First name</label>
+          <input type="text" id="first_name" class="mt-2 w-full px-4 py-3 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <!-- Last Name -->
+        <div>
+          <label for="last_name" class="text-lg">Last name</label>
+          <input type="text" id="last_name" class="mt-2 block w-full px-4 py-3 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <!-- User Name -->
+        <div>
+          <label for="username" class="text-lg">Username</label>
+          <input type="text" id="username" value="{{ username }}" readonly class="mt-2 block w-full px-4 py-3 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="Email" class="text-lg">Email</label>
+          <input type="text" id="email" value="{{ email }}"  readonly class="mt-2 block w-full px-4 py-3 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <button type="submit" class="mt-6 w-full bg-[#8DA9C4] font-bold text-black py-3 rounded-lg">
+        <div>CHANGE PASSWORD?</div>
+      </button>
+      <button type="button" onclick="sendFormData()" class="mt-4 w-full bg-[#134074] font-bold text-white text-2xl py-3 rounded-lg">
+        UPDATE CHANGES
+      </button>
+    </form>
+  </div> 
+</div>
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script>
+function sendFormData() {
+        let first_name = document.getElementById('first_name').value;
+        let last_name = document.getElementById('last_name').value;
+
+        $.ajax({
+            type: 'POST',
+            url: '/profile',
+            data: {
+                first_name: first_name,
+                last_name: last_name,
+            },
+            success: function(response) {
+                if (response.status === "success") {
+                    console.log("profile updated");
+                    // You can redirect or handle success here as needed
+                } else {
+                    console.log(response.message); // Log the error message
+                }
+            },
+            error: function(error) {
+                alert('Error occurred during registration');
+            }
+        });
+    }
+</script>
+
+
+</body>

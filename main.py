@@ -202,10 +202,73 @@ def dashboard():
 
     return render_template('dashboard.html', username=username, first_name=first_name, company_name=company_name)
 
+@app.route('/pricing')
+def overview():
+    return render_template('pricing.html')
+
+# @app.route('about_us')
+# def about_us():
+#     return render_template('about_us.html')
+
+# @app.route('/features')
+# def features():
+#     return render_template('features.html')
 
 @app.route('/test')
 def test():
     return render_template('test.html')
+
+@app.route('/profile', methods=['POST', 'GET'])
+def profile():
+    user_id = session.get('user_id')
+    
+    try:
+        cur = mysql.connection.cursor()
+
+        # Fetch email and username for the given user_id
+        fetch_query = """
+            SELECT email, username 
+            FROM user_data 
+            WHERE user_id = %s
+        """
+        cur.execute(fetch_query, (user_id,))
+        user_data = cur.fetchone()
+
+        if not user_data:
+            return jsonify({"status": "error", "message": "User not found"}), 404
+
+        email, username = user_data
+
+    except Exception as err:
+        return jsonify({"status": "error", "message": str(err)}), 500
+    finally:
+        cur.close()
+
+    if request.method == 'POST':
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+
+        try:
+            cur = mysql.connection.cursor()
+
+            # Update first_name and last_name in the user_data table
+            update_query = """
+                UPDATE user_data
+                SET first_name = %s, last_name = %s
+                WHERE user_id = %s
+            """
+            cur.execute(update_query, (first_name, last_name, user_id))
+            mysql.connection.commit()
+
+            return jsonify({"status": "success", "message": "User data updated successfully"}), 200
+        except Exception as err:
+            return jsonify({"status": "error", "message": str(err)}), 500
+        finally:
+            cur.close()
+
+    # Render the template with email and username for GET requests
+    return render_template("profile.html", email=email, username=username)
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
