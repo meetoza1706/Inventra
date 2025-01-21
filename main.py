@@ -202,13 +202,13 @@ def dashboard():
 
     return render_template('dashboard.html', username=username, first_name=first_name, company_name=company_name)
 
-@app.route('/pricing')
-def overview():
+@app.route('/pricing', methods=['GET','POST'])
+def pricing():
     return render_template('pricing.html')
 
-# @app.route('about_us')
-# def about_us():
-#     return render_template('about_us.html')
+@app.route('/about_us')
+def about_us():
+    return render_template('about_us.html')
 
 # @app.route('/features')
 # def features():

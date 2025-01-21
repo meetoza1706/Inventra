@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABOUT US</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <header class="border-b bg-white">
+    <div class="w-full flex flex-col sm:flex-row justify-between items-center py-3">
+        <!-- Logo -->
+        <div class="flex items-center space-x-2 ml-10">
+            <img src="Inventra Logo-19.png" alt="Inventra Logo" class="h-40 w-60">
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex flex-row items-center pt-4">
+          <div class="w-[40%]">
+              <img src="/static/images/landing_page_logo.svg" alt="Description of SVG" width="300px" height="30px"
+                  class="pl-12" />
+          </div>
+          <div class="w-[60%]">
+              <ul class="flex flex-row gap-[12%]">
+                  <li class="font-poppins text-xl font-bold pt-4"><a href="">Overview</a></li>
+                  <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('pricing') }}">Pricing</a></li>
+                  <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('login') }}">Features</a></li>
+                  <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('about_us') }}">About us</a></li>
+                  <li>
+                      <button style="
+                background-color: #134074;
+                color: white;
+                padding: 8px 16px;
+                margin-top: 10px;
+                border-radius: 9999px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              " class="hover:bg-opacity-90">
+                          <a href="{{ url_for('login') }}" class="font-poppins text-xl font-bold text-white">Sign
+                              in</a>
+                      </button>
+                  </li>
+              </ul>
+          </div>
+      </nav>
+    </div>
+</header>
+
+    <section class="h-screen flex flex-col justify-center items-center px-4 md:px-8">
+        <!-- Header Section -->
+        <div class="w-full text-center text-3xl  font-poppins font-semibold poppins ">
+            ABOUT US
+        </div>
+
+        <!-- Text Section -->
+        <div class="flex items-center justify-center h-screen -mt-16">
+            <!-- Centered Bordered Div -->
+            <div class="flex flex-col items-start p-6">
+                <div>
+                    <span class="font-poppins font-regular text-3xl text-[#5A5A5A]">
+                        At <span class="font-poppins font-medium text-black">Inventra,</span> we help you manage your inventory data effortlessly, so you
+                    </span>
+                </div>
+                <br>
+                <div class="mt-4">
+                    <span class="font-poppins font-regular text-3xl text-[#5A5A5A]">
+                        can focus on what truly matters—growing your business. Our system
+                    </span>
+                </div>
+                <div class="mt-8">
+                    <span class="font-poppins font-regular text-3xl text-[#5A5A5A]">
+                        is built to simplify and streamline every step of your inventory management
+                    </span>
+                </div>
+                <div class="mt-8">
+                    <span class="font-poppins font-regular text-3xl text-[#5A5A5A]">
+                        process.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+    <div class="px-3 bg-[#88A2C4] bg-opacity-50 text-black rounded-lg text-2xl flex justify-center py-1 font-bold">
+      <h1>OUR TEAM</h1>  
+    </div>
+    
+    <div class="flex flex-col items-center mt-20 space-y-10">
+      <!-- First Row -->
+      <div class="flex justify-between items-center w-full px-5 max-w-screen-lg">
+        <!-- First Item -->
+        <div class="flex flex-col items-center space-y-2">
+          <div class="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-[#134074]">Premal Dhandhukiya</div>
+            <div class="font-poppins font-bold">UI/UX Developer</div>
+          </div>
+        </div>
+        <!-- Second Item -->
+        <div class="flex flex-col items-center space-y-2">
+          <div class="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-[#134074]">Meet Oza</div>
+            <div class="font-poppins font-bold">Backend Developer</div>
+            <div class="font-poppins font-bold">LEADER</div>
+          </div>
+        </div>
+        <!-- Third Item -->
+        <div class="flex flex-col items-center space-y-2">
+          <div class="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-[#134074]">Heet Nathwani</div>
+            <div class="font-poppins font-bold">Database Administrator</div>
+          </div>
+        </div>
+      </div>
+    
+      <!-- Second Row -->
+      <div class="flex justify-between items-center w-full px-5 max-w-screen-lg">
+        <!-- Fourth Item -->
+        <div class="flex flex-col items-center space-y-2">
+          <div class="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-[#134074]">Meet Vyas</div>
+            <div class="font-poppins font-bold">Frontend Developer</div>
+          </div>
+        </div>
+        <!-- Fifth Item -->
+        <div class="flex flex-col items-center space-y-2">
+          <div class="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-[#134074]">Meet Prajapati</div>
+            <div class="font-poppins font-bold">Frontend Developer</div>
+          </div>
+        </div>
+        <!-- Sixth Item -->
+        <div class="flex flex-col items-center space-y-2">
+          <div class="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <div class="text-center">
+            <div class="font-bold text-[#134074]">Krish Patel</div>
+            <div class="font-poppins font-bold">Documentation Head</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    </div>
+    <section class="py-6 mt-16"> <!-- Added mt-16 for spacing -->
+      <footer class="container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm text-black rounded-lg p-4 bg-[#B5C2CA]">
+        <!-- Logo Section -->
+<div class="flex justify-center items-center">
+  <img src="Inventra Logo-19.png" alt="Inventra Logo" class="w-[200px] h-auto"> <!-- Example width of 200px -->
+</div>
+
+        
+        <!-- Quick Links -->
+        <div>
+          <h1 class="font-semibold mb-2 text-black text-2xl">Quick Links</h1>
+          <ul class="space-y-4">
+            <li><a href="#" class="hover:underline text-black">Overview</a></li>
+            <li><a href="#" class="hover:underline text-black">Pricing</a></li>
+            <li><a href="#" class="hover:underline text-black">Features</a></li>
+            <li><a href="#" class="hover:underline text-black">About Us</a></li>
+          </ul>
+        </div>
+    
+        <!-- Legal -->
+        <div>
+          <h1 class="font-semibold mb-2 text-black text-2xl">Legal</h1>
+          <ul class="space-y-2">
+            <li><a href="#" class="hover:underline text-black">Privacy Policy</a></li>
+            <li><a href="#" class="hover:underline text-black">Terms & Conditions</a></li>
+          </ul>
+        </div>
+    
+        <!-- Social Media -->
+        <div class="text-center">
+          <h2 class="font-semibold mb-4 text-xl sm:text-2xl text-black">Connect with us on</h2>
+          <div class="flex justify-center space-x-4">
+            <div class="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
+            </div>
+            <div class="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
+            </div>
+            <div class="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center">
+            </div>
+          </div>
+        </div>
+    
+        <!-- Footer Text -->
+        <div class="text-center text-xl mt-6 text-black">
+          © 2024 Inventra. All rights reserved.
+        </div>
+      </footer>
+    </section>
+    
+</body>
+</html>
