@@ -179,15 +179,17 @@ def dashboard():
 
     username = session.get('username', None)
     user_id, first_name, company_name = None, None, None
+    apps_to_display = []  # Initialize the list to avoid UnboundLocalError
 
     try:
         cur = mysql.connection.cursor()
 
-        # Fetch first_name and user_id from user_data table
-        cur.execute("SELECT first_name, user_id FROM user_data WHERE username = %s", (username,))
+        # Fetch first_name, user_id, and role_name from user_data table
+        cur.execute("SELECT first_name, user_id, role_id FROM user_data WHERE username = %s", (username,))
         user = cur.fetchone()
+
         if user:
-            first_name, user_id = user
+            first_name, user_id, role_name = user
 
         # Fetch company_name from company_data table if user_id exists
         if user_id:
@@ -195,12 +197,42 @@ def dashboard():
             company = cur.fetchone()
             if company:
                 company_name = company[0]
+
+        # Fetch default apps (always available for all users)
+        default_apps = [
+            {"app_name": "Inventory", "app_description": "Manage inventory items."},
+            {"app_name": "Order Book", "app_description": "Track customer orders."},
+            {"app_name": "Stock Entry", "app_description": "Manage stock entries."},
+        ]
+
+        # If the user is an admin, include Access Control app
+        if role_name == "admin":
+            default_apps.append({"app_name": "Access Control", "app_description": "Manage user permissions and roles."})
+
+        # Add default apps to the list of apps_to_display
+        apps_to_display.extend(default_apps)
+
+        # Fetch apps that the user has added to their dashboard
+        if user_id:
+            cur.execute("""
+                SELECT app_id FROM user_apps WHERE user_id = %s AND added_to_dashboard = TRUE
+            """, (user_id,))
+            added_apps = cur.fetchall()
+
+            for app in added_apps:
+                app_id = app[0]
+                cur.execute("SELECT app_name, app_description FROM apps WHERE app_id = %s", (app_id,))
+                app_info = cur.fetchone()
+                if app_info:
+                    apps_to_display.append({"app_name": app_info[0], "app_description": app_info[1]})
+
     except Exception as e:
         print(f"Error fetching data: {e}")
     finally:
         cur.close()
 
-    return render_template('dashboard.html', username=username, first_name=first_name, company_name=company_name)
+    return render_template('dashboard.html', username=username, first_name=first_name, company_name=company_name, apps=apps_to_display)
+
 
 @app.route('/pricing', methods=['GET','POST'])
 def pricing():
@@ -209,10 +241,6 @@ def pricing():
 @app.route('/about_us')
 def about_us():
     return render_template('about_us.html')
-
-# @app.route('/features')
-# def features():
-#     return render_template('features.html')
 
 @app.route('/test')
 def test():

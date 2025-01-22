@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 29, 2024 at 09:59 AM
+-- Generation Time: Jan 22, 2025 at 09:22 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -39,6 +39,34 @@ CREATE TABLE `admin_data` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `apps`
+--
+
+CREATE TABLE `apps` (
+  `app_id` int(11) NOT NULL,
+  `app_name` varchar(255) NOT NULL,
+  `app_description` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `apps`
+--
+
+INSERT INTO `apps` (`app_id`, `app_name`, `app_description`) VALUES
+(1, 'Toolbox', 'App store to manage and install apps'),
+(2, 'Inventory', 'Manage and track inventory items'),
+(3, 'Order Book', 'Keep track of customer orders'),
+(4, 'Stock Entry', 'Manage stock entries and updates'),
+(5, 'Access Control', 'Manage roles and permissions (Admin only)'),
+(6, 'Analytics', 'Analyze data and generate reports'),
+(7, 'Payments', 'Manage and process payments'),
+(8, 'Barcode Module', 'Manage barcode scanning and integration'),
+(9, 'RFID', 'Handle RFID-based stock management'),
+(10, 'Vendor List', 'Manage and track vendor information');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `company_data`
 --
 
@@ -49,8 +77,16 @@ CREATE TABLE `company_data` (
   `contact_number` varchar(15) NOT NULL,
   `website` varchar(100) NOT NULL,
   `date_established` date DEFAULT NULL,
-  `status` varchar(20) NOT NULL
+  `status` varchar(20) NOT NULL,
+  `user_id` int(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `company_data`
+--
+
+INSERT INTO `company_data` (`company_id`, `company_name`, `email`, `contact_number`, `website`, `date_established`, `status`, `user_id`) VALUES
+(1, 'mcorp', 'm17@m.corp', '9081363947', 'www.mcorp.com', '2025-01-15', 'Active', 5);
 
 -- --------------------------------------------------------
 
@@ -133,6 +169,42 @@ CREATE TABLE `order_data` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `role_permissions`
+--
+
+CREATE TABLE `role_permissions` (
+  `role_permission_id` int(11) NOT NULL,
+  `role` varchar(255) NOT NULL,
+  `app_id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `role_permissions`
+--
+
+INSERT INTO `role_permissions` (`role_permission_id`, `role`, `app_id`) VALUES
+(1, 'Admin', 1),
+(2, 'Admin', 2),
+(3, 'Admin', 3),
+(4, 'Admin', 4),
+(5, 'Admin', 5),
+(6, 'Admin', 6),
+(7, 'Admin', 7),
+(8, 'Admin', 8),
+(9, 'Admin', 9),
+(10, 'Admin', 10),
+(11, 'Manager', 1),
+(12, 'Manager', 2),
+(13, 'Manager', 3),
+(14, 'Manager', 4),
+(15, 'Manager', 6),
+(16, 'Employee', 1),
+(17, 'Employee', 2),
+(18, 'Employee', 3);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `sessions`
 --
 
@@ -149,7 +221,12 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`session_id`, `user_id`, `login_time`, `expiration_time`, `is_active`) VALUES
-('b37efed6-0ae9-408a-af89-f8263a35e5be', 1, '2024-12-29 14:27:31', '2024-12-29 15:27:31', 1);
+('7142b3f3-5793-4304-b8c5-6df61c559e76', 5, '2025-01-22 10:44:59', '2025-01-22 11:44:59', 1),
+('b37efed6-0ae9-408a-af89-f8263a35e5be', 1, '2024-12-29 14:27:31', '2024-12-29 15:27:31', 1),
+('b55e8854-38bc-445e-a4d8-60c30d666b0f', 5, '2025-01-22 12:15:22', '2025-01-22 13:15:22', 1),
+('dbadc05c-6be2-4ca7-9d72-f638527d6f1d', 5, '2025-01-22 10:41:41', '2025-01-22 11:41:41', 1),
+('ef806f4d-1007-41b5-bdef-4e8da6a7d34b', 5, '2025-01-22 13:26:04', '2025-01-22 14:26:04', 1),
+('f5d91052-d460-44e3-997b-7da6ae8cd86c', 5, '2025-01-22 13:48:07', '2025-01-22 14:48:07', 1);
 
 -- --------------------------------------------------------
 
@@ -201,6 +278,40 @@ CREATE TABLE `transaction_data` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `user_access`
+--
+
+CREATE TABLE `user_access` (
+  `user_access_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `company_id` int(11) DEFAULT NULL,
+  `app_id` int(11) DEFAULT NULL,
+  `can_view` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_apps`
+--
+
+CREATE TABLE `user_apps` (
+  `user_id` int(11) NOT NULL,
+  `app_id` int(11) NOT NULL,
+  `added_to_dashboard` tinyint(1) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_apps`
+--
+
+INSERT INTO `user_apps` (`user_id`, `app_id`, `added_to_dashboard`) VALUES
+(5, 1, 9),
+(5, 6, 1);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `user_data`
 --
 
@@ -223,8 +334,8 @@ CREATE TABLE `user_data` (
 --
 
 INSERT INTO `user_data` (`user_id`, `company_id`, `role_id`, `company_name`, `username`, `password`, `last_login`, `creation_time_stamp`, `first_name`, `last_name`, `email`) VALUES
-(1, NULL, NULL, NULL, 'meet17', 'meet', '2024-12-28 04:34:47', '2024-12-28 04:34:47', NULL, NULL, 'ozamee17@gmail.com'),
-(5, NULL, NULL, NULL, 'admin', 'admin', '2024-12-28 06:23:59', '2024-12-28 06:23:59', NULL, NULL, 'admin@123');
+(1, NULL, 'Employee', NULL, 'meet17', 'meet', '2024-12-28 04:34:47', '2024-12-28 04:34:47', NULL, NULL, 'ozamee17@gmail.com'),
+(5, NULL, 'Admin', NULL, 'admin', 'admin', '2024-12-28 06:23:59', '2024-12-28 06:23:59', NULL, NULL, 'admin@123');
 
 --
 -- Indexes for dumped tables
@@ -236,6 +347,12 @@ INSERT INTO `user_data` (`user_id`, `company_id`, `role_id`, `company_name`, `us
 ALTER TABLE `admin_data`
   ADD PRIMARY KEY (`admin_id`),
   ADD UNIQUE KEY `email` (`email`);
+
+--
+-- Indexes for table `apps`
+--
+ALTER TABLE `apps`
+  ADD PRIMARY KEY (`app_id`);
 
 --
 -- Indexes for table `company_data`
@@ -278,6 +395,13 @@ ALTER TABLE `order_data`
   ADD PRIMARY KEY (`order_id`);
 
 --
+-- Indexes for table `role_permissions`
+--
+ALTER TABLE `role_permissions`
+  ADD PRIMARY KEY (`role_permission_id`),
+  ADD KEY `app_id` (`app_id`);
+
+--
 -- Indexes for table `sessions`
 --
 ALTER TABLE `sessions`
@@ -302,6 +426,22 @@ ALTER TABLE `transaction_data`
   ADD PRIMARY KEY (`transaction_id`);
 
 --
+-- Indexes for table `user_access`
+--
+ALTER TABLE `user_access`
+  ADD PRIMARY KEY (`user_access_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `company_id` (`company_id`),
+  ADD KEY `app_id` (`app_id`);
+
+--
+-- Indexes for table `user_apps`
+--
+ALTER TABLE `user_apps`
+  ADD PRIMARY KEY (`user_id`,`app_id`),
+  ADD KEY `app_id` (`app_id`);
+
+--
 -- Indexes for table `user_data`
 --
 ALTER TABLE `user_data`
@@ -321,10 +461,16 @@ ALTER TABLE `admin_data`
   MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `apps`
+--
+ALTER TABLE `apps`
+  MODIFY `app_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
 -- AUTO_INCREMENT for table `company_data`
 --
 ALTER TABLE `company_data`
-  MODIFY `company_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `company_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `crm_table`
@@ -357,6 +503,12 @@ ALTER TABLE `order_data`
   MODIFY `order_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `role_permissions`
+--
+ALTER TABLE `role_permissions`
+  MODIFY `role_permission_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+
+--
 -- AUTO_INCREMENT for table `task_data`
 --
 ALTER TABLE `task_data`
@@ -375,10 +527,41 @@ ALTER TABLE `transaction_data`
   MODIFY `transaction_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `user_access`
+--
+ALTER TABLE `user_access`
+  MODIFY `user_access_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `user_data`
 --
 ALTER TABLE `user_data`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `role_permissions`
+--
+ALTER TABLE `role_permissions`
+  ADD CONSTRAINT `role_permissions_ibfk_1` FOREIGN KEY (`app_id`) REFERENCES `apps` (`app_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `user_access`
+--
+ALTER TABLE `user_access`
+  ADD CONSTRAINT `user_access_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user_data` (`user_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_access_ibfk_2` FOREIGN KEY (`company_id`) REFERENCES `company_data` (`company_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_access_ibfk_3` FOREIGN KEY (`app_id`) REFERENCES `apps` (`app_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `user_apps`
+--
+ALTER TABLE `user_apps`
+  ADD CONSTRAINT `user_apps_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user_data` (`user_id`),
+  ADD CONSTRAINT `user_apps_ibfk_2` FOREIGN KEY (`app_id`) REFERENCES `apps` (`app_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

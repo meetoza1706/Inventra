@@ -51,7 +51,7 @@ style="background-color: #ffffff;">
         <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
           <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
             <li>
-              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, {{ first_name if first_name else username }}</a>
+              <a href="{{ url_for('profile') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, {{ first_name if first_name else username }}</a>
             </li>
             <li>
               <a href="{{ url_for('company_find') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{{ company_name if company_name else "Join your company!" }}</a>
@@ -66,26 +66,19 @@ style="background-color: #ffffff;">
   </div>
 
   <!-- Content Row -->
-  <div class="dashboard-content mt-[15%]">
-    <div class="flex px-3 w-full items-center justify-center gap-14">
-      <div class="w-32 h-28 bg-[#C7DAE5] border border-blue-300 rounded-3xl flex items-center justify-center">
-        Content-1
-      </div>
-      <div class="w-32 h-28 bg-[#C7DAE5] border border-blue-300 rounded-3xl flex items-center justify-center">
-        Content-2
-      </div>
-      <div class="w-32 h-28 bg-[#C7DAE5] border border-blue-300 rounded-3xl flex items-center justify-center">
-        Content-3
-      </div>
-      <div class="w-32 h-28 bg-[#C7DAE5] border border-blue-300 rounded-3xl flex items-center justify-center">
-        Content-4
-      </div>
-      <div class="w-32 h-28 bg-[#C7DAE5] border border-blue-300 rounded-3xl flex items-center justify-center">
-        Content-5
-      </div>
-    </div>
-  </div>
-
+  <div class="dashboard-content mt-[2%] py-12 px-12 flex flex-wrap gap-12">
+    {% set index = 0 %}
+    {% for app in apps %}
+        {% if index % 8 == 0 and index != 0 %}
+            </div> <!-- Close the current row -->
+            <div class="w-full flex flex-row gap-12 mt-6"> <!-- Start a new row -->
+        {% endif %}
+        <div class="w-32 h-28 bg-[#C7DAE5] border border-blue-300 rounded-3xl flex items-center justify-center shadow-lg">
+            <span class="text-center">{{ app.app_name }}</span>  <!-- app_name -->
+        </div>
+        {% set index = index + 1 %}
+    {% endfor %}
+</div>
   <script>
     function updateTime() {
       const now = new Date();
