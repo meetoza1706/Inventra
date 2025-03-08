@@ -32,34 +32,34 @@ def sign_up():
         password = request.form.get('password')
         cpassword = request.form.get('cpassword')
         
-        if password == cpassword:
-            try:
-                cur = mysql.connection.cursor()
-                # Check if user already exists
-                query = "SELECT username, email FROM user_data WHERE username = %s AND email = %s"
-                cur.execute(query, (username, email))
-                user = cur.fetchone()
-                
-                if user:
-                    return jsonify({"status": "failure", "message": "User already exists"}), 409
-                else:
-                    # Insert new user
-                    insert_query = "INSERT INTO user_data (username, email, password) VALUES (%s, %s, %s)"
-                    cur.execute(insert_query, (username, email, password))
-                    mysql.connection.commit()
-                    return jsonify({"status": "success", "message": "User registered successfully"}), 201
-            except Exception as err:
-                return jsonify({"status": "error", "message": str(err)}), 500
-            finally:
-                cur.close()
-        else:
+        if password != cpassword:
             return jsonify({"status": "failure", "message": "Passwords do not match"}), 400
+        
+        try:
+            cur = mysql.connection.cursor()
+            # Check if user already exists
+            query = "SELECT username, email FROM user_data WHERE username = %s OR email = %s"
+            cur.execute(query, (username, email))
+            user = cur.fetchone()
+            
+            if user:
+                return jsonify({"status": "failure", "message": "User already exists"}), 409
+            else:
+                # Insert new user into user_data using the correct column name
+                insert_query = "INSERT INTO user_data (username, email, password_hash) VALUES (%s, %s, %s)"
+                cur.execute(insert_query, (username, email, password))
+                mysql.connection.commit()
+                return jsonify({"status": "success", "message": "User registered successfully"}), 201
+        except Exception as err:
+            print("Registration error:", err)
+            return jsonify({"status": "error", "message": str(err)}), 500
+        finally:
+            cur.close()
     
-    return render_template('sign_up.html')  
+    return render_template('sign_up.html')
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
-    # Check if the user is already logged in, if so, redirect to the dashboard
     if session.get('user_logged_in'):
         return jsonify({"status": "success", "message": "Already logged in"}), 200
 
@@ -69,39 +69,38 @@ def login():
 
         try:
             cur = mysql.connection.cursor()
-            query = "SELECT * FROM user_data WHERE username = %s AND password = %s"
+            # Use password_hash column in your query
+            query = "SELECT * FROM user_data WHERE username = %s AND password_hash = %s"
             cur.execute(query, (username, password))
             user = cur.fetchone()
+            print(user)
 
             if user:
-                # Create session data
-                session_id = str(uuid.uuid4())  # Generate a unique session ID
+                session_id = str(uuid.uuid4())
                 login_time = datetime.datetime.now()
-                expiration_time = login_time + datetime.timedelta(hours=1)  # Session expires in 1 hour
+                expiration_time = login_time + datetime.timedelta(hours=1)
 
                 # Insert session data into the sessions table
                 insert_query = "INSERT INTO sessions (session_id, user_id, login_time, expiration_time, is_active) VALUES (%s, %s, %s, %s, %s)"
                 cur.execute(insert_query, (session_id, user[0], login_time, expiration_time, 1))
                 mysql.connection.commit()
 
-                # Store session data
                 session['session_id'] = session_id
                 session['user_logged_in'] = True
-                session['username'] = username  # Store username in session
-                session['user_id'] = user[0]  # Store user_id in session
+                session['username'] = username
+                session['user_id'] = user[0]
 
-                # Return success status
                 return jsonify({"status": "success", "message": "Login successful"}), 200
             else:
                 return jsonify({"status": "failure", "message": "Invalid username or password"}), 401
 
         except Exception as err:
+            print("Login error:", err)
             return jsonify({"status": "error", "message": str(err)}), 500
         finally:
             cur.close()
 
     return render_template('login.html')
-
 
 @app.route('/logout')
 def logout():
@@ -148,28 +147,62 @@ def company_register():
 
     return render_template('company_register.html')
 
+# @app.route('/company_find', methods=['POST', 'GET'])
+# def company_find():
+#     companies = None  # Variable to store the search results
+
+#     if request.method == 'POST':
+#         search = request.form.get('search')  # Get search query from form
+
+#         try:
+#             cur = mysql.connection.cursor()
+
+#             query = "SELECT company_name, email FROM company_data WHERE company_name LIKE %s"
+#             cur.execute(query, ('%' + search + '%',))  # Search using LIKE with % for partial match
+#             companies = cur.fetchall()  # Fetch all matching companies
+#             print(companies)
+
+#         except Exception as e:
+#             print(f"Error: {e}")
+#             return "An error occurred", 500
+#         finally:
+#             if 'cur' in locals():
+#                 cur.close()
+
+#     return render_template('company_find.html', companies=companies)
+
+
 @app.route('/company_find', methods=['POST', 'GET'])
 def company_find():
     companies = None  # Variable to store the search results
 
     if request.method == 'POST':
-        search = request.form.get('search')  # Get search query from form
-
+        # Support both JSON and form submissions:
+        if request.is_json:
+            search = request.json.get('search')
+        else:
+            search = request.form.get('search')
+        
         try:
             cur = mysql.connection.cursor()
-
-            # SQL query to search for companies by name (case-insensitive search)
-            query = "SELECT company_name, email FROM company_data WHERE company_name LIKE %s"
+            query = "SELECT company_name FROM company_data WHERE company_name LIKE %s"
             cur.execute(query, ('%' + search + '%',))  # Search using LIKE with % for partial match
-            companies = cur.fetchall()  # Fetch all matching companies
-
+            # For JSON response, extract company names (assuming company_name is in first column)
+            companies = [row[0] for row in cur.fetchall()]
         except Exception as e:
             print(f"Error: {e}")
-            return "An error occurred", 500
+            if request.is_json:
+                return jsonify({"status": "error", "message": "Database error"}), 500
+            else:
+                return "An error occurred", 500
         finally:
-            if 'cur' in locals():
-                cur.close()
+            cur.close()
 
+        # If request is JSON (AJAX), return JSON response:
+        if request.is_json:
+            return jsonify({"status": "success", "companies": companies})
+    
+    # For normal GET requests, render the template with companies (if any)
     return render_template('company_find.html', companies=companies)
 
 @app.route('/dashboard')
@@ -191,6 +224,7 @@ def dashboard():
         if user:
             first_name, user_id, role_name = user
 
+        print(role_name)
         # Fetch company_name from company_data table if user_id exists
         if user_id:
             cur.execute("SELECT company_name FROM company_data WHERE user_id = %s", (user_id,))
@@ -233,7 +267,78 @@ def dashboard():
 
     return render_template('dashboard.html', username=username, first_name=first_name, company_name=company_name, apps=apps_to_display)
 
+@app.route('/company_join', methods=['POST'])
+def company_join():
+    user_id = session.get('user_id')
+    company_name = request.json.get('company_name')
 
+    if not user_id or not company_name:
+        return jsonify({'status': 'error', 'message': 'Invalid request'}), 400
+
+    try:
+        cur = mysql.connection.cursor()
+
+        # Get company ID
+        cur.execute("SELECT company_id FROM company_data WHERE company_name = %s", (company_name,))
+        company = cur.fetchone()
+
+        if not company:
+            return jsonify({'status': 'error', 'message': 'Company not found'}), 404
+
+        company_id = company[0]
+
+        # Check if there's an existing pending request for this company
+        cur.execute("""
+            SELECT status FROM join_requests WHERE user_id = %s AND company_id = %s
+        """, (user_id, company_id))
+        existing_request = cur.fetchone()
+
+        if existing_request:
+            if existing_request[0] == 'pending':
+                return jsonify({'status': 'error', 'message': 'You already have a pending request for this company'}), 400
+            elif existing_request[0] == 'accepted':
+                return jsonify({'status': 'error', 'message': 'You are already part of this company'}), 400
+
+        # Insert request into join_requests table
+        cur.execute("INSERT INTO join_requests (user_id, company_id, status) VALUES (%s, %s, 'pending')",
+                    (user_id, company_id))
+        mysql.connection.commit()
+
+        return jsonify({'status': 'success', 'message': 'Request sent to admin'})
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        cur.close()
+ 
+@app.route('/get_requests', methods=['GET'])
+def get_requests():
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
+
+    try:
+        cur = mysql.connection.cursor()
+        
+        # Fetch requests for the logged-in admin
+        cur.execute("""
+            SELECT ar.request_id, u.username, c.company_name 
+            FROM access_requests ar
+            JOIN user_data u ON ar.user_id = u.user_id
+            JOIN company_data c ON ar.company_id = c.company_id
+            WHERE c.company_id = (SELECT company_id FROM user_data WHERE user_id = %s) AND ar.status = 'pending'
+        """, (user_id,))
+        
+        requests = cur.fetchall()
+
+        return jsonify({'status': 'success', 'requests': requests})
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        cur.close()
+        
 @app.route('/pricing', methods=['GET','POST'])
 def pricing():
     return render_template('pricing.html')
@@ -296,7 +401,6 @@ def profile():
 
     # Render the template with email and username for GET requests
     return render_template("profile.html", email=email, username=username)
-
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

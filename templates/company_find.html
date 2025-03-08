@@ -4,112 +4,73 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Find your company</title>
-  <!-- Link to Poppins font -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"> 
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script> <!-- Include jQuery -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <style>
-    /* Apply Poppins font to the entire body */
-    body {
-      font-family: 'Poppins', sans-serif;
-      margin: 0;
-      padding: 0;
-      height: 100%;
-    }
-
-    /* Fix overflow on the main container */
-    .main-container {
-      overflow-y: auto;
-    }
-    .user-avatar {
-        width: 2rem;
-        height: 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #4b5563; /* Gray-800 */
-        color: white;
-        border-radius: 50%;
-        font-size: 0.875rem; /* Text-sm */
-        font-weight: bold;
-    }
-
-    /* Ensures the content stays within the viewport */
-    body {
-        height: 100vh;
-        overflow: hidden;  /* Prevents vertical scrolling */
-    }
-
-    .dashboard-content {
-        overflow-y: auto;  /* Enables vertical scrolling within this section if content overflows */
-        height: calc(100vh - 80px);  /* Adjust for header height */
-    }
-
+    body { font-family: 'Poppins', sans-serif; height: 100vh; overflow: hidden; background-color: #ffffff; }
+    .main-container { overflow-y: auto; }
+    .user-avatar { width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center; background-color: #4b5563; color: white; border-radius: 50%; font-size: 0.875rem; font-weight: bold; }
+    .dashboard-content { overflow-y: auto; height: calc(100vh - 80px); }
   </style>
 </head>
-<body class="relative w-full min-h-screen bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0" style="background-color: #ffffff">
+<body class="relative w-full min-h-screen bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0">
 
   <!-- Header -->
   <div class="mt-5 w-full flex justify-between items-center px-5">
     <div id="time-display" class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
     <div class="flex items-center">
-      <div class="flex items-center">
-        <div class="text-gray-600 font-medium ml-4 mr-4"><a href="{{ url_for('company_find') }}"></a></div>
-        <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" type="button">
-          <span class="sr-only">Open user menu</span>
-          <div class="user-avatar">M</div>
-        </button>      
-        <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
-          <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
-            <li>
-              <a href="#" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, {{ first_name if first_name else username }}</a>
-            </li>
-            <li>
-              <a href="{{ url_for('company_find') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{{ company_name if company_name else "Join your company!" }}</a>
-            </li>
-            <li>
-              <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">logout</a>
-            </li>
-          </ul>
-      </div>
+      <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full">
+        <div class="user-avatar">M</div>
+      </button>      
+      <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
+        <ul class="py-2 text-sm text-gray-700">
+          <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">Hello, {{ first_name if first_name else username }}</a></li>
+          <li><a href="{{ url_for('company_find') }}" class="block px-4 py-2 hover:bg-gray-100">{{ company_name if company_name else "Join your company!" }}</a></li>
+          <li><a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-100">Logout</a></li>
+        </ul>
       </div>
     </div>
   </div>
 
+  <!-- Main Content -->
   <div class="w-full h-full flex items-center justify-center">
     <div class="w-full max-w-2xl rounded-8xl p-4 mt-5 main-container">
       <div class="rounded-3xl bg-[#B5C2CA] py-4">
-        <div>
-          <p class="text-xl font-bold text-center pb-2">FIND YOUR COMPANY</p>
-        </div>
+        <p class="text-xl font-bold text-center pb-2">FIND YOUR COMPANY</p>
         <hr>
         <div class="px-4">
-          <form method="POST">
+          <form method="POST" id="search-form">
             <div class="py-1 pt-8">
-              <div class="w-full h-10 bg-white flex items-center justify-start pl-7 rounded-xl">
+              <div class="w-full h-10 bg-white flex items-center pl-7 rounded-xl">
                 <i class="fa-solid fa-search text-black mr-3"></i>
                 <input id="searchbox" type="text" placeholder="Search your company name..." name="search" class="w-full h-full bg-transparent outline-none text-gray-700 placeholder-gray-500" required />
               </div>
             </div>
           </form>
 
-          <!-- Show Results if companies are found -->
-          {% if companies %}
-          <div class="mt-8">
-            <h2 class="text-xl font-bold">Search Results:</h2>
-            <div class="py-8 flex flex-col space-y-4">
-              {% for company in companies %}
-              <div class="w-full flex items-center justify-between bg-[#E8EFFF] py-3 px-6 rounded-xl shadow-md">
-                <div class="text-gray-700 text-lg">{{ company[0] }}</div>
-                <button class="bg-[#13315C] text-white px-6 py-1 rounded-lg font-semibold">Join</button>
+          <!-- Container for AJAX Search Results -->
+          <div id="results-container">
+            <!-- If the page is rendered normally (GET request) with companies passed from Flask -->
+            {% if companies %}
+            <div class="mt-8">
+              <h2 class="text-xl font-bold">Search Results:</h2>
+              <div class="py-8 flex flex-col space-y-4">
+                {% for company in companies %}
+                <div class="w-full flex items-center justify-between bg-[#E8EFFF] py-3 px-6 rounded-xl shadow-md">
+                  <div class="text-gray-700 text-lg">{{ company[0] }}</div>
+                  <button onclick="joinCompany(event)" class="bg-[#13315C] text-white px-6 py-1 rounded-lg font-semibold join-btn" data-company="{{ company[0] }}">
+                    Join
+                  </button>
+                </div>
+                {% endfor %}
               </div>
-              {% endfor %}
             </div>
+            {% elif companies is not none %}
+            <p class="text-red-500 mt-4">No companies found matching your search.</p>
+            {% endif %}
           </div>
-          {% elif companies is not none %}
-          <p class="text-red-500 mt-4">No companies found matching your search.</p>
-          {% endif %}
 
           <div class="py-8 w-full h-10 rounded-2xl bg-[#E8EFFF] mt-2 flex items-center justify-start pl-8">
             <i class="fa-solid fa-plus text-black mr-3"></i>
@@ -119,48 +80,88 @@
       </div>
     </div>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
   <script>
-    // Add event listener for Enter key
+    // Function to handle joining a company via AJAX request
+    function joinCompany(event) {
+        const companyName = event.target.getAttribute("data-company");
+        if (!companyName) return alert("Please select a company.");
+
+        fetch("/company_join", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ company_name: companyName })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.status === "success" ? "Request Sent!" : data.message);
+            if (data.status === "success") window.location.href = "/dashboard";
+        })
+        .catch(() => alert("Something went wrong. Please try again."));
+    }
+
+    // Function to send the search query via AJAX and update the results
+    function sendFormData() {
+        let search = document.getElementById('searchbox').value;
+        $.ajax({
+            url: '/company_find',
+            type: 'POST',
+            data: JSON.stringify({ search: search }),
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === "success") {
+                    let resultContainer = document.getElementById("results-container");
+                    // Clear previous results
+                    resultContainer.innerHTML = "";
+                    
+                    // Build new results HTML
+                    if(response.companies.length > 0){
+                        let resultsHTML = `<div class="mt-8">
+                          <h2 class="text-xl font-bold">Search Results:</h2>
+                          <div class="py-8 flex flex-col space-y-4">`;
+                        response.companies.forEach(company => {
+                            resultsHTML += `<div class="w-full flex items-center justify-between bg-[#E8EFFF] py-3 px-6 rounded-xl shadow-md">
+                                <div class="text-gray-700 text-lg">${company}</div>
+                                <button onclick="joinCompany(event)" class="bg-[#13315C] text-white px-6 py-1 rounded-lg font-semibold join-btn" data-company="${company}">
+                                    Join
+                                </button>
+                            </div>`;
+                        });
+                        resultsHTML += `</div></div>`;
+                        resultContainer.innerHTML = resultsHTML;
+                    } else {
+                        resultContainer.innerHTML = `<p class="text-red-500 mt-4">No companies found matching your search.</p>`;
+                    }
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function() {
+                alert("Error fetching data");
+            }
+        });
+    }
+
+    // Add event listener for Enter key on the searchbox
     document.getElementById('searchbox').addEventListener('keydown', function(event) {
-      if (event.key === 'Enter') {
-        sendFormData(); // Call the function
-      }
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendFormData();
+        }
     });
 
-    function sendFormData() {
-      let search = document.getElementById('searchbox').value;
-
-      $.ajax({
-        type: 'POST',
-        url: '/company_find',
-        data: { search: search },
-        success: function(response) {
-          if (response.status === "success") {
-            console.log("done");
-          } else {
-            console.log(response.message); // Using console.log for simplicity
-          }
-        },
-        error: function(error) {
-          alert('Error occurred');
-        }
-      });
-    }
-  </script>
-  <script>
+    // Time display function
     function updateTime() {
-      const now = new Date();
-      let hours = now.getHours() % 12 || 12; // Convert to 12-hour format, 0 becomes 12
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
-
-      // Update the div content
-      document.getElementById('time-display').textContent = time;
+        const now = new Date();
+        const hours = now.getHours() % 12 || 12;
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('time-display').textContent = `${hours}:${minutes}`;
     }
 
-    updateTime(); // Show time immediately
-    setInterval(updateTime, 5000); // Refresh every 5 seconds
+    updateTime();
+    setInterval(updateTime, 5000);
   </script>
 </body>
 </html>
