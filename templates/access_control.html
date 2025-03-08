@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Company Access Control</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-5xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4">Company Access Control</h1>
+    
+    <!-- Section 1: Manage User App Assignments -->
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-2">User App Assignments</h2>
+      <form action="{{ url_for('access_control') }}" method="POST" class="mb-4">
+        <input type="hidden" name="assign" value="true">
+        <div class="flex space-x-4">
+          <div>
+            <label for="target_user_id" class="block text-sm font-medium text-gray-700">User</label>
+            <select name="target_user_id" id="target_user_id" class="mt-1 block w-full border-gray-300 rounded-md">
+              {% for user in company_users %}
+                <option value="{{ user[0] }}">
+                  {{ user[1] }} (
+                  {% if user[2] == 1 %}
+                    Admin
+                  {% elif user[2] == 2 %}
+                    Manager
+                  {% elif user[2] == 3 %}
+                    Employee
+                  {% else %}
+                    Custom
+                  {% endif %}
+                  )
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="app_id" class="block text-sm font-medium text-gray-700">App</label>
+            <select name="app_id" id="app_id" class="mt-1 block w-full border-gray-300 rounded-md">
+              {% for app in apps %}
+                <option value="{{ app[0] }}">{{ app[1] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Assign App</button>
+          </div>
+        </div>
+      </form>
+      
+      <table class="min-w-full border border-gray-300">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="px-4 py-2 border">User</th>
+            <th class="px-4 py-2 border">User Role</th>
+            <th class="px-4 py-2 border">App</th>
+            <th class="px-4 py-2 border">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for assignment in assignments %}
+          <tr>
+            <td class="px-4 py-2 border">{{ assignment.username }}</td>
+            <td class="px-4 py-2 border">{{ assignment.user_role }}</td>
+            <td class="px-4 py-2 border">{{ assignment.app_name }}</td>
+            <td class="px-4 py-2 border">
+              <form action="{{ url_for('access_control') }}" method="POST" onsubmit="return confirm('Are you sure?');">
+                <input type="hidden" name="remove_assignment" value="true">
+                <input type="hidden" name="assignment_id" value="{{ assignment.assignment_id }}">
+                <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded">Remove</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td class="px-4 py-2 border" colspan="4">No assignments found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Section 2: Manage Join Requests -->
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-2">Pending Join Requests</h2>
+      <table class="min-w-full border border-gray-300">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="px-4 py-2 border">Username</th>
+            <th class="px-4 py-2 border">Requested At</th>
+            <th class="px-4 py-2 border">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in join_requests %}
+          <tr>
+            <td class="px-4 py-2 border">{{ req.username }}</td>
+            <td class="px-4 py-2 border">{{ req.created_at }}</td>
+            <td class="px-4 py-2 border">
+              <form action="{{ url_for('access_control') }}" method="POST" style="display:inline;">
+                <input type="hidden" name="process_request" value="true">
+                <input type="hidden" name="request_id" value="{{ req.request_id }}">
+                <input type="hidden" name="decision" value="accepted">
+                <button type="submit" class="px-2 py-1 bg-green-500 text-white rounded">Accept</button>
+              </form>
+              <form action="{{ url_for('access_control') }}" method="POST" style="display:inline;">
+                <input type="hidden" name="process_request" value="true">
+                <input type="hidden" name="request_id" value="{{ req.request_id }}">
+                <input type="hidden" name="decision" value="rejected">
+                <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded">Reject</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td class="px-4 py-2 border" colspan="3">No join requests found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Section 3: Upgrade User Roles -->
+    <div>
+      <h2 class="text-xl font-semibold mb-2">Upgrade User Roles</h2>
+      <form action="{{ url_for('access_control') }}" method="POST" class="mb-4">
+        <input type="hidden" name="upgrade_role" value="true">
+        <div class="flex space-x-4">
+          <div>
+            <label for="upgrade_target_user_id" class="block text-sm font-medium text-gray-700">User</label>
+            <select name="upgrade_target_user_id" id="upgrade_target_user_id" class="mt-1 block w-full border-gray-300 rounded-md">
+              {% for user in company_users %}
+                <option value="{{ user[0] }}">
+                  {{ user[1] }} (Current: 
+                  {% if user[2] == 1 %}
+                    Admin
+                  {% elif user[2] == 2 %}
+                    Manager
+                  {% elif user[2] == 3 %}
+                    Employee
+                  {% else %}
+                    Custom
+                  {% endif %}
+                  )
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="new_role" class="block text-sm font-medium text-gray-700">New Role</label>
+            <select name="new_role" id="new_role" class="mt-1 block w-full border-gray-300 rounded-md">
+              <option value="1">Admin</option>
+              <option value="2">Manager</option>
+              <option value="3">Employee</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-md">Upgrade Role</button>
+          </div>
+        </div>
+      </form>
+    </div>
+    
+  </div>
+</body>
+</html>
