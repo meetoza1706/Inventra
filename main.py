@@ -69,27 +69,41 @@ def login():
 
         try:
             cur = mysql.connection.cursor()
-            # Use password_hash column in your query
+            # Verify user credentials
             query = "SELECT * FROM user_data WHERE username = %s AND password_hash = %s"
             cur.execute(query, (username, password))
             user = cur.fetchone()
-            print(user)
 
             if user:
-                session_id = str(uuid.uuid4())
-                login_time = datetime.datetime.now()
-                expiration_time = login_time + datetime.timedelta(hours=1)
+                user_id = user[0]
+                ip_address = request.remote_addr
+                # Check for an active session from the current IP address
+                cur.execute("""
+                    SELECT session_id FROM sessions 
+                    WHERE user_id = %s AND ip_address = %s 
+                      AND is_active = 1 AND expiration_time > NOW()
+                """, (user_id, ip_address))
+                active_session = cur.fetchone()
 
-                # Insert session data into the sessions table
-                insert_query = "INSERT INTO sessions (session_id, user_id, login_time, expiration_time, is_active) VALUES (%s, %s, %s, %s, %s)"
-                cur.execute(insert_query, (session_id, user[0], login_time, expiration_time, 1))
-                mysql.connection.commit()
+                if active_session:
+                    session['user_logged_in'] = True
+                    session['username'] = username
+                    session['user_id'] = user_id
+                else:
+                    # Create a new session record (auto-increment session_id)
+                    login_time = datetime.datetime.now()
+                    expiration_time = login_time + datetime.timedelta(hours=1)
+                    cur.execute("""
+                        INSERT INTO sessions (user_id, login_time, expiration_time, is_active, ip_address) 
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (user_id, login_time, expiration_time, 1, ip_address))
+                    mysql.connection.commit()
+                    
+                    session['user_logged_in'] = True
+                    session['username'] = username
+                    session['user_id'] = user_id
 
-                session['session_id'] = session_id
-                session['user_logged_in'] = True
-                session['username'] = username
-                session['user_id'] = user[0]
-
+                # Return JSON response to trigger redirection on the client-side
                 return jsonify({"status": "success", "message": "Login successful"}), 200
             else:
                 return jsonify({"status": "failure", "message": "Invalid username or password"}), 401
@@ -104,9 +118,19 @@ def login():
 
 @app.route('/logout')
 def logout():
-    session.clear()  # Clear all session ata
-    return redirect(url_for('login'))  # Redirect to login page after logout
-
+    # If you store session_id in your Flask session, mark it inactive in the database.
+    session_id = session.get('session_id')
+    if session_id:
+        try:
+            cur = mysql.connection.cursor()
+            cur.execute("UPDATE sessions SET is_active = 0 WHERE session_id = %s", (session_id,))
+            mysql.connection.commit()
+        except Exception as e:
+            print("Error updating session:", e)
+        finally:
+            cur.close()
+    session.clear()  # Clear all session data
+    return redirect(url_for('login'))
 
 @app.route('/company_register', methods=['POST', 'GET'])
 def company_register():
@@ -143,75 +167,6 @@ def company_register():
         finally:
             cur.close()
     return render_template('company_register.html')
-
-# @app.route('/process_join_request', methods=['POST'])
-# def process_join_request():
-#     if not session.get('user_logged_in'):
-#         return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
-
-#     admin_user_id = session.get('user_id')
-#     try:
-#         cur = mysql.connection.cursor()
-#         # Verify current user is an Admin
-#         cur.execute("SELECT role_id, company_id FROM user_data WHERE user_id = %s", (admin_user_id,))
-#         admin_info = cur.fetchone()
-#         if not admin_info or admin_info[0] != 1:
-#             return jsonify({'status': 'error', 'message': 'Not authorized'}), 403
-#         admin_company_id = admin_info[1]
-
-#         data = request.get_json()
-#         request_id = data.get('request_id')
-#         decision = data.get('decision')  # Should be 'accepted' or 'rejected'
-#         if not request_id or decision not in ['accepted', 'rejected']:
-#             return jsonify({'status': 'error', 'message': 'Invalid input'}), 400
-
-#         # Fetch join request details
-#         cur.execute("SELECT user_id, company_id FROM join_requests WHERE request_id = %s", (request_id,))
-#         join_req = cur.fetchone()
-#         if not join_req:
-#             return jsonify({'status': 'error', 'message': 'Join request not found'}), 404
-#         join_user_id, join_company_id = join_req
-#         if join_company_id != admin_company_id:
-#             return jsonify({'status': 'error', 'message': 'Request does not belong to your company'}), 403
-
-#         # Update request status
-#         cur.execute("UPDATE join_requests SET status = %s WHERE request_id = %s", (decision, request_id))
-#         if decision == 'accepted':
-#             # Assign default role Employee (role_id 3) and set company_id for the joining user
-#             cur.execute("UPDATE user_data SET company_id = %s, role_id = %s WHERE user_id = %s", (admin_company_id, 3, join_user_id))
-#         mysql.connection.commit()
-#         return jsonify({'status': 'success', 'message': f'Request {decision}.'})
-#     except Exception as e:
-#         mysql.connection.rollback()
-#         return jsonify({'status': 'error', 'message': str(e)}), 500
-#     finally:
-#         cur.close()
-
-
-# @app.route('/company_find', methods=['POST', 'GET'])
-# def company_find():
-#     companies = None  # Variable to store the search results
-
-#     if request.method == 'POST':
-#         search = request.form.get('search')  # Get search query from form
-
-#         try:
-#             cur = mysql.connection.cursor()
-
-#             query = "SELECT company_name, email FROM company_data WHERE company_name LIKE %s"
-#             cur.execute(query, ('%' + search + '%',))  # Search using LIKE with % for partial match
-#             companies = cur.fetchall()  # Fetch all matching companies
-#             print(companies)
-
-#         except Exception as e:
-#             print(f"Error: {e}")
-#             return "An error occurred", 500
-#         finally:
-#             if 'cur' in locals():
-#                 cur.close()
-
-#     return render_template('company_find.html', companies=companies)
-
 
 @app.route('/company_find', methods=['POST', 'GET'])
 def company_find():
