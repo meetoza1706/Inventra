@@ -250,14 +250,11 @@ def company_find():
 def dashboard():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
-
+    
     username = session.get('username')
-    first_name, user_id, role_name, company_name = None, None, None, None
-    apps_to_display = []
-
     try:
         cur = mysql.connection.cursor()
-        # Fetch user details along with company info via company_id
+        # Fetch user info: first_name, user_id, role_name, and company_name
         cur.execute("""
             SELECT u.first_name, u.user_id, r.role_name, c.company_name
             FROM user_data u
@@ -266,119 +263,65 @@ def dashboard():
             WHERE u.username = %s
         """, (username,))
         user_info = cur.fetchone()
-        if user_info:
-            first_name, user_id, role_name, company_name = user_info
-            print("DEBUG: company_name =", company_name)  # Debug: Check if company_name is fetched
-        else:
+        if not user_info:
             return redirect(url_for('login'))
-
-        # Fetch apps available for the user's role
-        if role_name:
+        first_name, user_id, role_name, company_name = user_info
+        print("DEBUG: company_name =", company_name)
+        print("DEBUG: role_name =", role_name)
+        
+        # If company_name is None, try fetching it from employee_data (for non-admins)
+        if not company_name:
+            cur.execute("SELECT company_name FROM employee_data WHERE user_id = %s", (user_id,))
+            emp = cur.fetchone()
+            if emp:
+                company_name = emp[0]
+        
+        apps_to_display = []
+        # Only fetch apps if the user is part of a company
+        cur.execute("SELECT company_id FROM user_data WHERE user_id = %s", (user_id,))
+        comp_result = cur.fetchone()
+        if comp_result and comp_result[0]:
+            # First, try to fetch user-specific apps from user_apps (with dynamic route)
             cur.execute("""
-                SELECT a.app_name, a.app_description 
-                FROM role_permissions rp
-                JOIN apps a ON rp.permissions = a.app_id
-                WHERE rp.role_name = %s
-            """, (role_name,))
-            role_apps = cur.fetchall()
-            apps_to_display.extend(
-                [{"app_name": app[0], "app_description": app[1]} for app in role_apps]
-            )
-
-        # Fetch apps manually added by the user
-        if user_id:
-            cur.execute("""
-                SELECT a.app_name, a.app_description 
+                SELECT a.app_name, a.app_description, a.app_route
                 FROM user_apps ua
-                JOIN apps a ON ua.app_id = a.app_id
-                WHERE ua.user_id = %s AND ua.added_to_dashboard = TRUE
+                JOIN apps a ON ua.app_id = a.app_id 
+                WHERE ua.user_id = %s AND ua.added_to_dashboard = 1
             """, (user_id,))
             user_apps = cur.fetchall()
-            apps_to_display.extend(
-                [{"app_name": app[0], "app_description": app[1]} for app in user_apps]
-            )
+            if user_apps:
+                apps_to_display = [
+                    {"app_name": r[0], "app_description": r[1], "app_route": r[2]} 
+                    for r in user_apps
+                ]
+            else:
+                # Fallback: fetch default apps from role_permissions based on role_name (with dynamic route)
+                if role_name:
+                    cur.execute("""
+                        SELECT a.app_name, a.app_description, a.app_route
+                        FROM role_permissions rp
+                        JOIN apps a ON rp.permissions = a.app_id
+                        WHERE rp.role_name = %s
+                    """, (role_name,))
+                    role_apps = cur.fetchall()
+                    apps_to_display = [
+                        {"app_name": r[0], "app_description": r[1], "app_route": r[2]} 
+                        for r in role_apps
+                    ]
+        else:
+            # User not in a company so no company-specific apps are shown.
+            apps_to_display = []
+        
+        return render_template('dashboard.html',
+                               username=username,
+                               first_name=first_name or '',
+                               company_name=company_name or '',
+                               apps=apps_to_display)
     except Exception as e:
         print("Error fetching data:", e)
+        return "Error", 500
     finally:
         cur.close()
-
-    return render_template('dashboard.html',
-                           username=username,
-                           first_name=first_name or '',
-                           company_name=company_name or '',
-                           apps=apps_to_display)
-
-# @app.route('/company_join', methods=['POST'])
-# def company_join():
-#     user_id = session.get('user_id')
-#     company_name = request.json.get('company_name')
-
-#     if not user_id or not company_name:
-#         return jsonify({'status': 'error', 'message': 'Invalid request'}), 400
-
-#     try:
-#         cur = mysql.connection.cursor()
-
-#         # Get company ID
-#         cur.execute("SELECT company_id FROM company_data WHERE company_name = %s", (company_name,))
-#         company = cur.fetchone()
-
-#         if not company:
-#             return jsonify({'status': 'error', 'message': 'Company not found'}), 404
-
-#         company_id = company[0]
-
-#         # Check if there's an existing pending request for this company
-#         cur.execute("""
-#             SELECT status FROM join_requests WHERE user_id = %s AND company_id = %s
-#         """, (user_id, company_id))
-#         existing_request = cur.fetchone()
-
-#         if existing_request:
-#             if existing_request[0] == 'pending':
-#                 return jsonify({'status': 'error', 'message': 'You already have a pending request for this company'}), 400
-#             elif existing_request[0] == 'accepted':
-#                 return jsonify({'status': 'error', 'message': 'You are already part of this company'}), 400
-
-#         # Insert request into join_requests table
-#         cur.execute("INSERT INTO join_requests (user_id, company_id, status) VALUES (%s, %s, 'pending')",
-#                     (user_id, company_id))
-#         mysql.connection.commit()
-
-#         return jsonify({'status': 'success', 'message': 'Request sent to admin'})
-
-#     except Exception as e:
-#         return jsonify({'status': 'error', 'message': str(e)}), 500
-#     finally:
-#         cur.close()
- 
-# @app.route('/get_requests', methods=['GET'])
-# def get_requests():
-#     user_id = session.get('user_id')
-    
-#     if not user_id:
-#         return jsonify({'status': 'error', 'message': 'Not logged in'}), 401
-
-#     try:
-#         cur = mysql.connection.cursor()
-        
-#         # Fetch requests for the logged-in admin
-#         cur.execute("""
-#             SELECT ar.request_id, u.username, c.company_name 
-#             FROM access_requests ar
-#             JOIN user_data u ON ar.user_id = u.user_id
-#             JOIN company_data c ON ar.company_id = c.company_id
-#             WHERE c.company_id = (SELECT company_id FROM user_data WHERE user_id = %s) AND ar.status = 'pending'
-#         """, (user_id,))
-        
-#         requests = cur.fetchall()
-
-#         return jsonify({'status': 'success', 'requests': requests})
-
-#     except Exception as e:
-#         return jsonify({'status': 'error', 'message': str(e)}), 500
-#     finally:
-#         cur.close()
 
 @app.route('/company_join', methods=['POST'])
 def company_join():
@@ -487,16 +430,182 @@ def profile():
 
     # Render the template with email and username for GET requests
     return render_template("profile.html", email=email, username=username)
+@app.route('/company_profile', methods=['GET', 'POST'])
+def company_profile():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    user_id = session.get('user_id')
+    try:
+        cur = mysql.connection.cursor()
+        # Get user's company and role
+        cur.execute("SELECT company_id, role_id FROM user_data WHERE user_id = %s", (user_id,))
+        user_data = cur.fetchone()
+        if not user_data:
+            return "User not found", 404
+        company_id, role_id = user_data
+        if not company_id:
+            return "You are not part of any company", 400
+        is_admin = (role_id == 1)
+        
+        if request.method == 'POST':
+            if is_admin:
+                # Admin updating profile
+                if 'update_profile' in request.form:
+                    company_name = request.form.get('company_name')
+                    email = request.form.get('email')
+                    contact_number = request.form.get('contact_number')
+                    website = request.form.get('website')
+                    date_established = request.form.get('date_established')
+                    cur.execute("""
+                        UPDATE company_data 
+                        SET company_name = %s, email = %s, contact_number = %s, website = %s, date_established = %s 
+                        WHERE company_id = %s
+                    """, (company_name, email, contact_number, website, date_established, company_id))
+                    mysql.connection.commit()
+                    return redirect(url_for('company_profile'))
+                elif 'delete_company' in request.form:
+                    # For now, just display a message (deletion will be implemented later)
+                    return "Delete Company functionality will be implemented near project completion.", 200
+            else:
+                # Non-admin leave company action:
+                if 'leave_company' in request.form:
+                    # Remove user's app assignments
+                    cur.execute("DELETE FROM user_apps WHERE user_id = %s", (user_id,))
+                    # Remove company association and role_id from user_data
+                    cur.execute("UPDATE user_data SET company_id = NULL, role_id = NULL WHERE user_id = %s", (user_id,))
+                    mysql.connection.commit()
+                    return redirect(url_for('dashboard'))
+                    
+        # GET: fetch company profile details
+        cur.execute("""
+            SELECT company_name, email, contact_number, website, date_established 
+            FROM company_data 
+            WHERE company_id = %s
+        """, (company_id,))
+        company = cur.fetchone()
+        if not company:
+            return "Company not found", 404
+
+        return render_template('company_profile.html', company=company, is_admin=is_admin)
+    except Exception as e:
+        print("Error in company_profile:", e)
+        return "Error", 500
+    finally:
+        cur.close()
+
+@app.route('/employee/add', methods=['POST'])
+def add_employee():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    admin_user_id = session.get('user_id')
+    try:
+        cur = mysql.connection.cursor()
+        # Only Admin can add employee records
+        cur.execute("SELECT role_id, company_id FROM user_data WHERE user_id = %s", (admin_user_id,))
+        admin_info = cur.fetchone()
+        if not admin_info or admin_info[0] != 1:
+            return "Unauthorized", 403
+        company_id = admin_info[1]
+        # Get data from form submission (or JSON)
+        user_id = request.form.get('user_id')
+        company_name = request.form.get('company_name')
+        role_id = request.form.get('role_id')
+        when_joined = request.form.get('when_joined')  # optional; otherwise defaults to NOW()
+        if not (user_id and company_name and role_id):
+            return jsonify({"status": "error", "message": "Missing required fields"}), 400
+        if not when_joined:
+            when_joined = datetime.datetime.now()
+        cur.execute("""
+            INSERT INTO employee_data (user_id, company_id, company_name, role_id, when_joined)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (user_id, company_id, company_name, role_id, when_joined))
+        mysql.connection.commit()
+        return jsonify({"status": "success", "message": "Employee added"}), 200
+    except Exception as e:
+        mysql.connection.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+
+@app.route('/employee/remove', methods=['POST'])
+def remove_employee():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    admin_user_id = session.get('user_id')
+    try:
+        cur = mysql.connection.cursor()
+        # Only Admin can remove employee records
+        cur.execute("SELECT role_id FROM user_data WHERE user_id = %s", (admin_user_id,))
+        admin_info = cur.fetchone()
+        if not admin_info or admin_info[0] != 1:
+            return "Unauthorized", 403
+        employee_id = request.form.get('employee_id')
+        if not employee_id:
+            return jsonify({"status": "error", "message": "Missing employee_id"}), 400
+        cur.execute("DELETE FROM employee_data WHERE employee_id = %s", (employee_id,))
+        mysql.connection.commit()
+        return jsonify({"status": "success", "message": "Employee removed"}), 200
+    except Exception as e:
+        mysql.connection.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+
+@app.route('/employee/update', methods=['POST'])
+def update_employee():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    admin_user_id = session.get('user_id')
+    try:
+        cur = mysql.connection.cursor()
+        # Only Admin can update employee records
+        cur.execute("SELECT role_id FROM user_data WHERE user_id = %s", (admin_user_id,))
+        admin_info = cur.fetchone()
+        if not admin_info or admin_info[0] != 1:
+            return "Unauthorized", 403
+        employee_id = request.form.get('employee_id')
+        if not employee_id:
+            return jsonify({"status": "error", "message": "Missing employee_id"}), 400
+        
+        # Build the update query dynamically based on provided fields
+        update_fields = []
+        params = []
+        if request.form.get('user_id'):
+            update_fields.append("user_id = %s")
+            params.append(request.form.get('user_id'))
+        if request.form.get('company_name'):
+            update_fields.append("company_name = %s")
+            params.append(request.form.get('company_name'))
+        if request.form.get('role_id'):
+            update_fields.append("role_id = %s")
+            params.append(request.form.get('role_id'))
+        if request.form.get('when_joined'):
+            update_fields.append("when_joined = %s")
+            params.append(request.form.get('when_joined'))
+        if not update_fields:
+            return jsonify({"status": "error", "message": "No fields to update"}), 400
+        params.append(employee_id)
+        query = "UPDATE employee_data SET " + ", ".join(update_fields) + " WHERE employee_id = %s"
+        cur.execute(query, tuple(params))
+        mysql.connection.commit()
+        return jsonify({"status": "success", "message": "Employee updated"}), 200
+    except Exception as e:
+        mysql.connection.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+
 
 # from here only apps
 @app.route('/access_control', methods=['GET', 'POST'])
 def access_control():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
+    
     admin_user_id = session.get('user_id')
     try:
         cur = mysql.connection.cursor()
-        # Verify the current user is admin and get their company_id
+        # Verify current user is Admin and fetch company_id
         cur.execute("SELECT role_id, company_id FROM user_data WHERE user_id = %s", (admin_user_id,))
         admin_info = cur.fetchone()
         if not admin_info or admin_info[0] != 1:
@@ -504,7 +613,7 @@ def access_control():
         company_id = admin_info[1]
         
         if request.method == 'POST':
-            # If adding an assignment
+            # Add custom app assignment
             if 'assign' in request.form:
                 target_user_id = request.form.get('target_user_id')
                 app_id = request.form.get('app_id')
@@ -514,16 +623,24 @@ def access_control():
                         (target_user_id, app_id)
                     )
                     mysql.connection.commit()
-            # If removing an assignment
+            # Remove a custom assignment
             elif 'remove_assignment' in request.form:
                 assignment_id = request.form.get('assignment_id')
                 if assignment_id:
                     cur.execute("DELETE FROM user_apps WHERE user_app_id = %s", (assignment_id,))
                     mysql.connection.commit()
+            # Remove default access by inserting an override record
+            elif 'remove_default' in request.form:
+                target_user_id = request.form.get('target_user_id')
+                app_id = request.form.get('app_id')
+                if target_user_id and app_id:
+                    cur.execute("INSERT INTO user_apps (user_id, app_id, added_to_dashboard) VALUES (%s, %s, 0)", 
+                                (target_user_id, app_id))
+                    mysql.connection.commit()
             # Process join request (accept/reject)
             elif 'process_request' in request.form:
                 req_id = request.form.get('request_id')
-                decision = request.form.get('decision')  # expected 'accepted' or 'rejected'
+                decision = request.form.get('decision')  # 'accepted' or 'rejected'
                 if req_id and decision in ['accepted', 'rejected']:
                     cur.execute("UPDATE join_requests SET status = %s WHERE request_id = %s", (decision, req_id))
                     if decision == 'accepted':
@@ -531,11 +648,10 @@ def access_control():
                         join_user = cur.fetchone()
                         if join_user:
                             join_user_id = join_user[0]
-                            # Set the joining user as Employee (role_id 3) and assign company_id
                             cur.execute("UPDATE user_data SET company_id = %s, role_id = %s WHERE user_id = %s",
                                         (company_id, 3, join_user_id))
                     mysql.connection.commit()
-            # Upgrade user role
+            # Upgrade a user's role
             elif 'upgrade_role' in request.form:
                 target_user_id = request.form.get('upgrade_target_user_id')
                 new_role = request.form.get('new_role')
@@ -545,43 +661,82 @@ def access_control():
             return redirect(url_for('access_control'))
         
         # GET section:
-        # 1. List all users in the admin's company (with their role)
+        # 1. Get all users in the company (with their role info)
         cur.execute("SELECT user_id, username, role_id FROM user_data WHERE company_id = %s", (company_id,))
         company_users = cur.fetchall()
         
-        # 2. List available apps from the apps table
+        role_map = {1: "Admin", 2: "Manager", 3: "Employee"}
+        
+        # 2. Get all available apps for dropdown
         cur.execute("SELECT app_id, app_name FROM apps")
         apps = cur.fetchall()
         
-        # 3. Get current app assignments for users in the company
-        cur.execute("""
-            SELECT ua.user_app_id, u.username, a.app_name, u.role_id
-            FROM user_apps ua
-            JOIN user_data u ON ua.user_id = u.user_id
-            JOIN apps a ON ua.app_id = a.app_id
-            WHERE u.company_id = %s
-        """, (company_id,))
+        # 3. Build full track of app assignments for each non-admin user
         assignments = []
-        role_map = {1: "Admin", 2: "Manager", 3: "Employee"}
-        for row in cur.fetchall():
-            assignments.append({
-                "assignment_id": row[0],
-                "username": row[1],
-                "app_name": row[2],
-                "user_role": role_map.get(row[3], "Custom")
-            })
+        for user in company_users:
+            u_id, username, r_id = user
+            if r_id == 1:  # Skip admin's own assignments
+                continue
+            role_name = role_map.get(r_id, "Custom")
+            # Check for custom assignments for this user
+            cur.execute("""
+                SELECT ua.user_app_id, a.app_id, a.app_name, a.app_description
+                FROM user_apps ua
+                JOIN apps a ON ua.app_id = a.app_id
+                WHERE ua.user_id = %s AND ua.added_to_dashboard = 1
+            """, (u_id,))
+            custom_apps = cur.fetchall()
+            if custom_apps:
+                for row in custom_apps:
+                    assignments.append({
+                        "assignment_id": row[0],
+                        "username": username,
+                        "user_id": u_id,
+                        "app_id": row[1],
+                        "app_name": row[2],
+                        "app_description": row[3],
+                        "user_role": role_name,
+                        "custom": True
+                    })
+            else:
+                # Fallback to default apps from role_permissions for the user's role
+                cur.execute("""
+                    SELECT a.app_id, a.app_name, a.app_description 
+                    FROM role_permissions rp
+                    JOIN apps a ON rp.permissions = a.app_id
+                    WHERE rp.role_name = %s
+                """, (role_name,))
+                default_apps = cur.fetchall()
+                for row in default_apps:
+                    app_id = row[0]
+                    # Check if an override exists for this user & app
+                    cur.execute("SELECT COUNT(*) FROM user_apps WHERE user_id = %s AND app_id = %s AND added_to_dashboard = 0", 
+                                (u_id, app_id))
+                    override_count = cur.fetchone()[0]
+                    if override_count > 0:
+                        continue  # Skip this default app since access was removed
+                    assignments.append({
+                        "assignment_id": None,
+                        "username": username,
+                        "user_id": u_id,
+                        "app_id": app_id,
+                        "app_name": row[1],
+                        "app_description": row[2],
+                        "user_role": role_name,
+                        "custom": False
+                    })
         
-        # 4. Get pending join requests for the company
+        # 4. Get pending join requests for the company.
         cur.execute("SELECT request_id, user_id, created_at FROM join_requests WHERE company_id = %s AND status = 'pending'", (company_id,))
         join_requests = []
         for req in cur.fetchall():
             req_id, u_id, created_at = req
             cur.execute("SELECT username FROM user_data WHERE user_id = %s", (u_id,))
             user_row = cur.fetchone()
-            username = user_row[0] if user_row else "Unknown"
+            req_username = user_row[0] if user_row else "Unknown"
             join_requests.append({
                 "request_id": req_id,
-                "username": username,
+                "username": req_username,
                 "created_at": created_at
             })
         

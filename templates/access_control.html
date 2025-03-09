@@ -7,12 +7,19 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 p-4">
+  <!-- Navigation Header -->
+  <div class="flex justify-between items-center mb-4">
+    <a href="{{ url_for('dashboard') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md">Back to Dashboard</a>
+    <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-600 text-white rounded-md">Logout</a>
+  </div>
+
   <div class="max-w-5xl mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-4">Company Access Control</h1>
+    <h1 class="text-2xl font-bold mb-6">Company Access Control</h1>
     
     <!-- Section 1: Manage User App Assignments -->
-    <div class="mb-8">
+    <div class="mb-10">
       <h2 class="text-xl font-semibold mb-2">User App Assignments</h2>
+      <!-- Assignment Form -->
       <form action="{{ url_for('access_control') }}" method="POST" class="mb-4">
         <input type="hidden" name="assign" value="true">
         <div class="flex space-x-4">
@@ -50,12 +57,14 @@
         </div>
       </form>
       
+      <!-- Assignments Table -->
       <table class="min-w-full border border-gray-300">
         <thead class="bg-gray-200">
           <tr>
             <th class="px-4 py-2 border">User</th>
             <th class="px-4 py-2 border">User Role</th>
             <th class="px-4 py-2 border">App</th>
+            <th class="px-4 py-2 border">Description</th>
             <th class="px-4 py-2 border">Actions</th>
           </tr>
         </thead>
@@ -65,17 +74,29 @@
             <td class="px-4 py-2 border">{{ assignment.username }}</td>
             <td class="px-4 py-2 border">{{ assignment.user_role }}</td>
             <td class="px-4 py-2 border">{{ assignment.app_name }}</td>
+            <td class="px-4 py-2 border">{{ assignment.app_description }}</td>
             <td class="px-4 py-2 border">
-              <form action="{{ url_for('access_control') }}" method="POST" onsubmit="return confirm('Are you sure?');">
+              {% if assignment.custom %}
+              <!-- Remove custom assignment -->
+              <form action="{{ url_for('access_control') }}" method="POST" onsubmit="return confirm('Remove this custom app assignment?');">
                 <input type="hidden" name="remove_assignment" value="true">
                 <input type="hidden" name="assignment_id" value="{{ assignment.assignment_id }}">
                 <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded">Remove</button>
               </form>
+              {% else %}
+              <!-- Remove default access override -->
+              <form action="{{ url_for('access_control') }}" method="POST" onsubmit="return confirm('Remove this default app access?');">
+                <input type="hidden" name="remove_default" value="true">
+                <input type="hidden" name="target_user_id" value="{{ assignment.user_id }}">
+                <input type="hidden" name="app_id" value="{{ assignment.app_id }}">
+                <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded">Remove</button>
+              </form>
+              {% endif %}
             </td>
           </tr>
           {% else %}
           <tr>
-            <td class="px-4 py-2 border" colspan="4">No assignments found.</td>
+            <td class="px-4 py-2 border" colspan="5">No assignments found.</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -83,7 +104,7 @@
     </div>
     
     <!-- Section 2: Manage Join Requests -->
-    <div class="mb-8">
+    <div class="mb-10">
       <h2 class="text-xl font-semibold mb-2">Pending Join Requests</h2>
       <table class="min-w-full border border-gray-300">
         <thead class="bg-gray-200">

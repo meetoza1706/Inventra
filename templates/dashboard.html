@@ -7,7 +7,9 @@
   <!-- Link to Poppins font -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" 
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" 
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />
   <style>
     .user-avatar {
@@ -16,84 +18,83 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #4b5563; /* Gray-800 */
+        background-color: #4b5563;
         color: white;
         border-radius: 50%;
-        font-size: 0.875rem; /* Text-sm */
+        font-size: 0.875rem;
         font-weight: bold;
     }
-
-    /* Ensures the content stays within the viewport */
     body {
         height: 100vh;
-        overflow: hidden;  /* Prevents vertical scrolling */
+        overflow: hidden;
     }
-
     .dashboard-content {
-        overflow-y: auto;  /* Enables vertical scrolling within this section if content overflows */
-        height: calc(100vh - 80px);  /* Adjust for header height */
+        overflow-y: auto;
+        height: calc(100vh - 80px);
     }
-</style>
+  </style>
 </head>
-<body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0"
-style="background-color: #ffffff;">
-
+<body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0" style="background-color: #ffffff;">
   <!-- Header -->
   <div class="mt-5 w-full flex justify-between items-center px-5">
     <div id="time-display" class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
     <div class="flex items-center">
       <div class="flex items-center">
-        <div class="text-gray-600 font-medium ml-4 mr-4"><a href="{{ url_for('company_find') }}">{{ company_name if company_name else "Join your company!" }}</a></div>
-        <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" type="button">
+        <div class="text-gray-600 font-medium ml-4 mr-4">
+          <a href="{{ url_for('company_profile') if company_name else url_for('company_find') }}">
+            {{ company_name if company_name else "Join your company!" }}
+          </a>
+        </div>
+        <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-4 focus:ring-gray-300" type="button">
           <span class="sr-only">Open user menu</span>
           <div class="user-avatar">M</div>
         </button>      
-        <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
-          <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownUserAvatarButton">
+        <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
+          <ul class="py-2 text-sm text-gray-700" aria-labelledby="dropdownUserAvatarButton">
             <li>
-              <a href="{{ url_for('profile') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Hello, {{ first_name if first_name else username }}</a>
+              <a href="{{ url_for('profile') }}" class="block px-4 py-2 hover:bg-gray-100">Hello, {{ first_name if first_name else username }}</a>
             </li>
             <li>
-              <a href="{{ url_for('company_find') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{{ company_name if company_name else "Join your company!" }}</a>
+              <a href="{{ url_for('company_profile') if company_name else url_for('company_find') }}" class="block px-4 py-2 hover:bg-gray-100">
+                {{ company_name if company_name else "Join your company!" }}
+              </a>
             </li>
             <li>
-              <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">logout</a>
+              <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-100">Logout</a>
             </li>
           </ul>
-      </div>
+        </div>
       </div>
     </div>
   </div>
-
+  
   <!-- Content Row -->
   <div class="dashboard-content mt-[2%] py-12 px-12 flex flex-wrap gap-12">
     {% set index = 0 %}
     {% for app in apps %}
-        {% if index % 8 == 0 and index != 0 %}
-            </div> <!-- Close the current row -->
-            <div class="w-full flex flex-row gap-12 mt-6"> <!-- Start a new row -->
-        {% endif %}
-        <div class="w-32 h-28 bg-[#C7DAE5] border border-blue-300 rounded-3xl flex items-center justify-center shadow-lg">
-            <span class="text-center">{{ app.app_name }}</span>  <!-- app_name -->
-        </div>
-        {% set index = index + 1 %}
+      {% if index % 8 == 0 and index != 0 %}
+          </div>
+          <div class="w-full flex flex-row gap-12 mt-6">
+      {% endif %}
+      <!-- Each app is now an anchor tag that uses the dynamic route -->
+      <a href="{{ app.app_route }}" class="w-32 h-28 bg-[#C7DAE5] border border-blue-300 rounded-3xl flex items-center justify-center shadow-lg">
+          <span class="text-center">{{ app.app_name }}</span>
+      </a>
+      {% set index = index + 1 %}
     {% endfor %}
-</div>
+  </div>
+  
   <script>
     function updateTime() {
       const now = new Date();
-      let hours = now.getHours() % 12 || 12; // Convert to 12-hour format, 0 becomes 12
+      let hours = now.getHours() % 12 || 12;
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const time = `${String(hours).padStart(2, '0')}:${minutes}`;
-      
-      // Update the div content
       document.getElementById('time-display').textContent = time;
     }
-    
-    updateTime(); // Show time immediately
-    setInterval(updateTime, 5000); // Refresh every 5 seconds
+    updateTime();
+    setInterval(updateTime, 5000);
   </script>
-
   <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
 </body>
 </html>
