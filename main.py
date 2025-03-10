@@ -595,10 +595,20 @@ def access_control():
             # Process join request (accept/reject)
             elif 'process_request' in request.form:
                 req_id = request.form.get('request_id')
-                decision = request.form.get('decision')  # 'accepted' or 'rejected'
-                if req_id and decision in ['accepted', 'rejected']:
-                    cur.execute("UPDATE join_requests SET status = %s WHERE request_id = %s", (decision, req_id))
-                    if decision == 'accepted':
+                decision = request.form.get('decision')  # Expected value from form
+                if req_id and decision:
+                    decision_lower = decision.strip().lower()
+                    print("Received decision:", decision_lower)  # Debug output
+                    # Expand allowed values
+                    if decision_lower in ['approve', 'approved', 'accept', 'accepted']:
+                        decision_mapped = 'approved'
+                    elif decision_lower in ['reject', 'rejected', 'decline', 'declined']:
+                        decision_mapped = 'rejected'
+                    else:
+                        return jsonify({"status": "error", "message": "Invalid decision value: " + decision_lower}), 400
+                    # Update join_requests with the mapped decision
+                    cur.execute("UPDATE join_requests SET status = %s WHERE request_id = %s", (decision_mapped, req_id))
+                    if decision_mapped == 'approved':
                         cur.execute("SELECT user_id FROM join_requests WHERE request_id = %s", (req_id,))
                         join_user = cur.fetchone()
                         if join_user:
@@ -638,7 +648,7 @@ def access_control():
                 SELECT ua.user_app_id, a.app_id, a.app_name, a.app_description
                 FROM user_apps ua
                 JOIN apps a ON ua.app_id = a.app_id
-                WHERE ua.user_id = %s AND ua.added_to_dashboard = 1
+                WHERE ua.user_id = %s AND ua.added_to_dashboard = TRUE
             """, (u_id,))
             custom_apps = cur.fetchall()
             if custom_apps:
@@ -665,7 +675,7 @@ def access_control():
                 for row in default_apps:
                     app_id = row[0]
                     # Check if an override exists for this user & app
-                    cur.execute("SELECT COUNT(*) FROM user_apps WHERE user_id = %s AND app_id = %s AND added_to_dashboard = 0", 
+                    cur.execute("SELECT COUNT(*) FROM user_apps WHERE user_id = %s AND app_id = %s AND added_to_dashboard = FALSE", 
                                 (u_id, app_id))
                     override_count = cur.fetchone()[0]
                     if override_count > 0:
