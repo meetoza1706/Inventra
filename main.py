@@ -573,14 +573,19 @@ def access_control():
                 target_user_id = request.form.get('target_user_id')
                 app_id = request.form.get('app_id')
                 if target_user_id and app_id:
-                    cur.execute("""
-                        INSERT INTO user_apps (user_id, app_id, added_to_dashboard) 
-                        SELECT %s, %s, TRUE
-                        WHERE NOT EXISTS (
-                            SELECT 1 FROM user_apps WHERE user_id = %s AND app_id = %s
-                        )
-                    """, (target_user_id, app_id, target_user_id, app_id))
-                    mysql.connection.commit()
+                    # Check if this app is already assigned to the user
+                    cur.execute("SELECT COUNT(*) FROM user_apps WHERE user_id = %s AND app_id = %s", 
+                                (target_user_id, app_id))
+                    exists = cur.fetchone()[0]
+                    if exists > 0:
+                        # Already assigned – no further processing (you can also flash a message)
+                        print(f"User {target_user_id} already has access to app {app_id}")
+                    else:
+                        cur.execute("""
+                            INSERT INTO user_apps (user_id, app_id, added_to_dashboard) 
+                            VALUES (%s, %s, TRUE)
+                        """, (target_user_id, app_id))
+                        mysql.connection.commit()
             # Remove a custom assignment
             elif 'remove_assignment' in request.form:
                 assignment_id = request.form.get('assignment_id')
@@ -598,16 +603,17 @@ def access_control():
             # Process join request (accept/reject)
             elif 'process_request' in request.form:
                 req_id = request.form.get('request_id')
-                decision = request.form.get('decision')  # Expected: various forms of approve/reject
+                decision = request.form.get('decision')  # Expected value from form
                 if req_id and decision:
                     decision_lower = decision.strip().lower()
-                    # Accept additional variants for approval/rejection
+                    print("Received decision:", decision_lower)  # Debug output
                     if decision_lower in ['approve', 'approved', 'accept', 'accepted']:
                         decision_mapped = 'approved'
                     elif decision_lower in ['reject', 'rejected', 'decline', 'declined']:
                         decision_mapped = 'rejected'
                     else:
                         return jsonify({"status": "error", "message": "Invalid decision value: " + decision_lower}), 400
+                    # Update join_requests with the mapped decision
                     cur.execute("UPDATE join_requests SET status = %s WHERE request_id = %s", (decision_mapped, req_id))
                     if decision_mapped == 'approved':
                         cur.execute("SELECT user_id FROM join_requests WHERE request_id = %s", (req_id,))
@@ -633,18 +639,16 @@ def access_control():
         
         role_map = {1: "Admin", 2: "Manager", 3: "Employee"}
         
-        # 2. Get all available apps for dropdown
-        cur.execute("SELECT app_id, app_name FROM apps")
-        apps = cur.fetchall()
+        # 2. Get all available apps for dropdown (and for fallback)
+        cur.execute("SELECT app_id, app_name, app_description FROM apps")
+        all_apps = cur.fetchall()
         
-        # 3. Build full track of app assignments for each non-admin user
+        # 3. Build full track of app assignments for each user
         assignments = []
         for user in company_users:
             u_id, username, r_id = user
-            if r_id == 1:  # Skip admin's own assignments
-                continue
             role_name = role_map.get(r_id, "Custom")
-            # Check for custom assignments for this user
+            # Get custom assignments for this user
             cur.execute("""
                 SELECT ua.user_app_id, a.app_id, a.app_name, a.app_description
                 FROM user_apps ua
@@ -652,20 +656,37 @@ def access_control():
                 WHERE ua.user_id = %s AND ua.added_to_dashboard = TRUE
             """, (u_id,))
             custom_apps = cur.fetchall()
-            if custom_apps:
-                for row in custom_apps:
+            # Add custom assignments if they exist
+            for row in custom_apps:
+                assignments.append({
+                    "assignment_id": row[0],
+                    "username": username,
+                    "user_id": u_id,
+                    "app_id": row[1],
+                    "app_name": row[2],
+                    "app_description": row[3],
+                    "user_role": role_name,
+                    "custom": True
+                })
+            # Fallback: For admin, fetch ALL apps; for others, use role_permissions mapping.
+            if r_id == 1:
+                # Admin: always see all apps
+                for app in all_apps:
+                    # Skip if a custom assignment already exists for this app
+                    if any(c[1] == app[0] for c in custom_apps):
+                        continue
                     assignments.append({
-                        "assignment_id": row[0],
+                        "assignment_id": None,
                         "username": username,
                         "user_id": u_id,
-                        "app_id": row[1],
-                        "app_name": row[2],
-                        "app_description": row[3],
+                        "app_id": app[0],
+                        "app_name": app[1],
+                        "app_description": app[2],
                         "user_role": role_name,
-                        "custom": True
+                        "custom": False
                     })
             else:
-                # Fallback to default apps from role_permissions for the user's role
+                # Non-admin: fallback to apps via role_permissions mapping
                 cur.execute("""
                     SELECT a.app_id, a.app_name, a.app_description 
                     FROM role_permissions rp
@@ -674,18 +695,20 @@ def access_control():
                 """, (role_name,))
                 default_apps = cur.fetchall()
                 for row in default_apps:
-                    app_id = row[0]
-                    # Check if an override exists for this user & app
+                    # Skip if a custom assignment already exists for this app
+                    if any(c[1] == row[0] for c in custom_apps):
+                        continue
+                    # Check if an override exists for this user & app (removed default access)
                     cur.execute("SELECT COUNT(*) FROM user_apps WHERE user_id = %s AND app_id = %s AND added_to_dashboard = FALSE", 
-                                (u_id, app_id))
+                                (u_id, row[0]))
                     override_count = cur.fetchone()[0]
                     if override_count > 0:
-                        continue  # Skip this default app since access was removed
+                        continue
                     assignments.append({
                         "assignment_id": None,
                         "username": username,
                         "user_id": u_id,
-                        "app_id": app_id,
+                        "app_id": row[0],
                         "app_name": row[1],
                         "app_description": row[2],
                         "user_role": role_name,
@@ -708,7 +731,7 @@ def access_control():
         
         return render_template('access_control.html', 
                                company_users=company_users, 
-                               apps=apps, 
+                               apps=all_apps, 
                                assignments=assignments, 
                                join_requests=join_requests)
     except Exception as e:
@@ -717,5 +740,468 @@ def access_control():
     finally:
         cur.close()
 
-if __name__ == '__main__':
+#Inventory
+@app.route('/inventory', methods=['GET', 'POST'])
+def inventory():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    
+    username = session.get('username')
+    try:
+        cur = mysql.connection.cursor()
+        # Get company_id for the current user from user_data
+        cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
+        result = cur.fetchone()
+        if not result or result[0] is None:
+            return "You are not part of a company.", 400
+        company_id = result[0]
+
+        # If POST, add/update an inventory item
+        if request.method == 'POST':
+            item_name = request.form.get('item_name')
+            quantity = request.form.get('quantity')
+            location_id = request.form.get('location_id')
+            unit_price = request.form.get('unit_price')
+            reorder_level = request.form.get('reorder_level')
+            category = request.form.get('category')
+            item_description = request.form.get('item_description')
+
+            # Convert quantity to integer
+            try:
+                quantity = int(quantity)
+            except ValueError:
+                return "Invalid quantity", 400
+
+            # Check if the item exists (same company, same name, same location)
+            cur.execute("""
+                SELECT inventory_id, quantity 
+                FROM inventory_data 
+                WHERE company_id = %s AND item_name = %s AND location_id = %s
+            """, (company_id, item_name, location_id))
+            existing_item = cur.fetchone()
+            if existing_item:
+                inventory_id = existing_item[0]
+                current_quantity = int(existing_item[1])
+                new_quantity = current_quantity + quantity
+
+                # Update inventory_data record
+                cur.execute("""
+                    UPDATE inventory_data 
+                    SET quantity = %s, updated_at = NOW(), unit_price = %s, reorder_level = %s, item_description = %s 
+                    WHERE inventory_id = %s
+                """, (new_quantity, unit_price, reorder_level, item_description, inventory_id))
+                mysql.connection.commit()
+
+                # Update corresponding stock_levels record
+                cur.execute("""
+                    SELECT stock_id, quantity 
+                    FROM stock_levels 
+                    WHERE inventory_id = %s AND location_id = %s
+                """, (inventory_id, location_id))
+                stock_record = cur.fetchone()
+                if stock_record:
+                    stock_id, current_stock = stock_record
+                    new_stock = int(current_stock) + quantity
+                    cur.execute("""
+                        UPDATE stock_levels 
+                        SET quantity = %s, last_updated = NOW() 
+                        WHERE stock_id = %s
+                    """, (new_stock, stock_id))
+                else:
+                    cur.execute("""
+                        INSERT INTO stock_levels (inventory_id, location_id, quantity)
+                        VALUES (%s, %s, %s)
+                    """, (inventory_id, location_id, quantity))
+                mysql.connection.commit()
+            else:
+                # Insert new item into inventory_data
+                cur.execute("""
+                    INSERT INTO inventory_data (company_id, item_name, quantity, location_id, unit_price, reorder_level, item_description)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (company_id, item_name, quantity, location_id, unit_price, reorder_level, item_description))
+                mysql.connection.commit()
+                inventory_id = cur.lastrowid
+
+                # Insert corresponding record into stock_levels
+                cur.execute("""
+                    INSERT INTO stock_levels (inventory_id, location_id, quantity)
+                    VALUES (%s, %s, %s)
+                """, (inventory_id, location_id, quantity))
+                mysql.connection.commit()
+
+            return redirect(url_for('inventory'))
+
+        # GET: Retrieve all locations for the current company
+        cur.execute("SELECT location_id, location_name FROM inventory_locations WHERE company_id = %s", (company_id,))
+        locations = cur.fetchall()
+
+        # Dictionary to store inventory per location
+        inventory_by_location = {}
+        for location in locations:
+            location_id, location_name = location
+            cur.execute("""
+                SELECT id.inventory_id, id.item_name, sl.quantity, sl.last_updated
+                FROM stock_levels sl
+                JOIN inventory_data id ON sl.inventory_id = id.inventory_id
+                WHERE id.company_id = %s AND sl.location_id = %s
+                ORDER BY sl.last_updated DESC
+            """, (company_id, location_id))
+            inventory_by_location[location_name] = cur.fetchall()
+
+        return render_template("inventory.html", inventory_by_location=inventory_by_location, locations=locations)
+    except Exception as e:
+        print("Error fetching inventory:", e)
+        return "Error", 500
+    finally:
+        cur.close()
+
+@app.route('/add_location', methods=['POST'])
+def add_location():
+    if not session.get('user_logged_in'):
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+
+    location_name = request.form.get('location_name')
+    address = request.form.get('address')
+    user_id = session.get('user_id')
+
+    try:
+        cur = mysql.connection.cursor()
+        # Fetch the company_id of the current user
+        cur.execute("SELECT company_id FROM user_data WHERE user_id = %s", (user_id,))
+        company = cur.fetchone()
+        if not company or not company[0]:
+            return jsonify({"status": "error", "message": "Company not found"}), 400
+        company_id = company[0]
+
+        # Insert new location
+        cur.execute("""
+            INSERT INTO inventory_locations (company_id, location_name, address)
+            VALUES (%s, %s, %s)
+        """, (company_id, location_name, address))
+        mysql.connection.commit()
+
+        location_id = cur.lastrowid  # Get the inserted location's ID
+        return jsonify({"status": "success", "location_id": location_id})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+    finally:
+        cur.close()
+
+@app.route('/edit_location', methods=['POST'])
+def edit_location():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    
+    location_id = request.form.get('location_id')
+    new_location_name = request.form.get('location_name')
+    new_address = request.form.get('address')
+    
+    if not location_id or not new_location_name:
+        return jsonify({"status": "error", "message": "Missing required fields"}), 400
+    
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            UPDATE inventory_locations
+            SET location_name = %s, address = %s
+            WHERE location_id = %s
+        """, (new_location_name, new_address, location_id))
+        mysql.connection.commit()
+        return jsonify({"status": "success", "message": "Location updated", "location_id": location_id, "location_name": new_location_name})
+    except Exception as e:
+        mysql.connection.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+
+@app.route('/delete_location', methods=['POST'])
+def delete_location():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    
+    location_id = request.form.get('location_id')
+    if not location_id:
+        return jsonify({"status": "error", "message": "Location ID required"}), 400
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM inventory_locations WHERE location_id = %s", (location_id,))
+        mysql.connection.commit()
+        return jsonify({"status": "success", "message": "Location deleted", "location_id": location_id})
+    except Exception as e:
+        mysql.connection.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+
+#stock_entry
+@app.route('/stock_entry', methods=['GET', 'POST'])
+def stock_entry():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    
+    username = session.get('username')
+    user_id = session.get('user_id')
+    try:
+        cur = mysql.connection.cursor()
+        # Get company_id for the current user from user_data
+        cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
+        result = cur.fetchone()
+        if not result or result[0] is None:
+            return "You are not part of a company.", 400
+        company_id = result[0]
+        
+        if request.method == 'POST':
+            entry_type = request.form.get('entry_type')  # 'add', 'transfer', or 'sold'
+            inventory_id = request.form.get('inventory_id')
+            try:
+                quantity = int(request.form.get('quantity'))
+            except ValueError:
+                return "Invalid quantity", 400
+
+            if entry_type == 'add':
+                # Add Stock: record movement (type 'IN') with performed_by = user_id
+                location_id = request.form.get('location_id')
+                cur.execute("""
+                    INSERT INTO stock_movements (inventory_id, from_location, to_location, quantity, movement_type, performed_by)
+                    VALUES (%s, NULL, %s, %s, 'IN', %s)
+                """, (inventory_id, location_id, quantity, user_id))
+                mysql.connection.commit()
+                
+                # Update stock_levels record (or insert new) for the location
+                cur.execute("""
+                    SELECT stock_id, quantity 
+                    FROM stock_levels 
+                    WHERE inventory_id = %s AND location_id = %s
+                """, (inventory_id, location_id))
+                stock_record = cur.fetchone()
+                if stock_record:
+                    new_quantity = int(stock_record[1]) + quantity
+                    cur.execute("""
+                        UPDATE stock_levels 
+                        SET quantity = %s, last_updated = NOW() 
+                        WHERE stock_id = %s
+                    """, (new_quantity, stock_record[0]))
+                else:
+                    cur.execute("""
+                        INSERT INTO stock_levels (inventory_id, location_id, quantity)
+                        VALUES (%s, %s, %s)
+                    """, (inventory_id, location_id, quantity))
+                mysql.connection.commit()
+            
+            elif entry_type == 'transfer':
+                # Transfer Stock: require from_location and to_location
+                from_location = request.form.get('from_location')
+                to_location = request.form.get('to_location')
+                # Check if sufficient stock exists at the source location
+                cur.execute("""
+                    SELECT stock_id, quantity 
+                    FROM stock_levels 
+                    WHERE inventory_id = %s AND location_id = %s
+                """, (inventory_id, from_location))
+                from_record = cur.fetchone()
+                if not from_record or int(from_record[1]) < quantity:
+                    return "Insufficient stock in the source location", 400
+                new_from_qty = int(from_record[1]) - quantity
+                cur.execute("""
+                    UPDATE stock_levels 
+                    SET quantity = %s, last_updated = NOW() 
+                    WHERE stock_id = %s
+                """, (new_from_qty, from_record[0]))
+                # Add stock to destination location
+                cur.execute("""
+                    SELECT stock_id, quantity 
+                    FROM stock_levels 
+                    WHERE inventory_id = %s AND location_id = %s
+                """, (inventory_id, to_location))
+                to_record = cur.fetchone()
+                if to_record:
+                    new_to_qty = int(to_record[1]) + quantity
+                    cur.execute("""
+                        UPDATE stock_levels 
+                        SET quantity = %s, last_updated = NOW() 
+                        WHERE stock_id = %s
+                    """, (new_to_qty, to_record[0]))
+                else:
+                    cur.execute("""
+                        INSERT INTO stock_levels (inventory_id, location_id, quantity)
+                        VALUES (%s, %s, %s)
+                    """, (inventory_id, to_location, quantity))
+                # Record the transfer movement with performed_by = user_id
+                cur.execute("""
+                    INSERT INTO stock_movements (inventory_id, from_location, to_location, quantity, movement_type, performed_by)
+                    VALUES (%s, %s, %s, %s, 'TRANSFER', %s)
+                """, (inventory_id, from_location, to_location, quantity, user_id))
+                mysql.connection.commit()
+            
+            elif entry_type == 'sold':
+                # Sold Stock: Remove stock from a given location
+                location_id = request.form.get('location_id')
+                cur.execute("""
+                    SELECT stock_id, quantity 
+                    FROM stock_levels 
+                    WHERE inventory_id = %s AND location_id = %s
+                """, (inventory_id, location_id))
+                stock_record = cur.fetchone()
+                if not stock_record or int(stock_record[1]) < quantity:
+                    return "Insufficient stock in the location", 400
+                new_quantity = int(stock_record[1]) - quantity
+                cur.execute("""
+                    UPDATE stock_levels 
+                    SET quantity = %s, last_updated = NOW() 
+                    WHERE stock_id = %s
+                """, (new_quantity, stock_record[0]))
+                # Record the sold movement (type 'OUT') with performed_by = user_id
+                cur.execute("""
+                    INSERT INTO stock_movements (inventory_id, from_location, to_location, quantity, movement_type, performed_by)
+                    VALUES (%s, %s, NULL, %s, 'OUT', %s)
+                """, (inventory_id, location_id, quantity, user_id))
+                mysql.connection.commit()
+            
+            return redirect(url_for('stock_entry'))
+        
+        # GET: Retrieve products and available locations for the current company
+        cur.execute("SELECT inventory_id, item_name FROM inventory_data WHERE company_id = %s", (company_id,))
+        products = cur.fetchall()
+        cur.execute("SELECT location_id, location_name FROM inventory_locations WHERE company_id = %s", (company_id,))
+        locations = cur.fetchall()
+        
+        # Retrieve recent stock movements (last 10)
+        cur.execute("""
+            SELECT sm.movement_id, id.item_name,
+                   (SELECT il.location_name FROM inventory_locations il WHERE il.location_id = sm.from_location) AS from_loc,
+                   (SELECT il.location_name FROM inventory_locations il WHERE il.location_id = sm.to_location) AS to_loc,
+                   sm.quantity, sm.movement_type, sm.created_at
+            FROM stock_movements sm
+            JOIN inventory_data id ON sm.inventory_id = id.inventory_id
+            WHERE id.company_id = %s
+            ORDER BY sm.created_at DESC
+            LIMIT 10
+        """, (company_id,))
+        movements = cur.fetchall()
+        movement_list = []
+        for row in movements:
+            movement_list.append({
+                "movement_id": row[0],
+                "product_name": row[1],
+                "from_location": row[2] if row[2] else "N/A",
+                "to_location": row[3] if row[3] else "N/A",
+                "quantity": row[4],
+                "movement_type": row[5],
+                "created_at": row[6]
+            })
+        
+        return render_template("stock_entry.html", products=products, locations=locations, movements=movement_list)
+    except Exception as e:
+        print("Error in stock_entry:", e)
+        return "Error", 500
+    finally:
+        cur.close()
+
+@app.route('/undo_movement', methods=['POST'])
+def undo_movement():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    
+    movement_id = request.form.get('movement_id')
+    if not movement_id:
+        return "Movement ID not provided", 400
+    try:
+        cur = mysql.connection.cursor()
+        # Get the movement details
+        cur.execute("""
+            SELECT movement_type, inventory_id, from_location, to_location, quantity 
+            FROM stock_movements WHERE movement_id = %s
+        """, (movement_id,))
+        movement = cur.fetchone()
+        if not movement:
+            return "Movement not found", 404
+        
+        movement_type, inventory_id, from_location, to_location, quantity = movement
+        quantity = int(quantity)
+        
+        # Reverse the movement based on type
+        if movement_type == 'IN':
+            # For stock added, subtract it from the destination (location_id = to_location)
+            cur.execute("""
+                SELECT stock_id, quantity FROM stock_levels 
+                WHERE inventory_id = %s AND location_id = %s
+            """, (inventory_id, to_location))
+            record = cur.fetchone()
+            if not record:
+                return "Stock record not found", 404
+            stock_id, current_qty = record
+            new_qty = int(current_qty) - quantity
+            if new_qty < 0:
+                return "Cannot undo: insufficient stock", 400
+            cur.execute("""
+                UPDATE stock_levels SET quantity = %s, last_updated = NOW() WHERE stock_id = %s
+            """, (new_qty, stock_id))
+        
+        elif movement_type == 'OUT':
+            # For sold stock, add the quantity back to the source (location_id = from_location)
+            cur.execute("""
+                SELECT stock_id, quantity FROM stock_levels 
+                WHERE inventory_id = %s AND location_id = %s
+            """, (inventory_id, from_location))
+            record = cur.fetchone()
+            if record:
+                stock_id, current_qty = record
+                new_qty = int(current_qty) + quantity
+                cur.execute("""
+                    UPDATE stock_levels SET quantity = %s, last_updated = NOW() WHERE stock_id = %s
+                """, (new_qty, stock_id))
+            else:
+                cur.execute("""
+                    INSERT INTO stock_levels (inventory_id, location_id, quantity)
+                    VALUES (%s, %s, %s)
+                """, (inventory_id, from_location, quantity))
+        
+        elif movement_type == 'TRANSFER':
+            # For transfer, subtract from destination and add back to source
+            # Subtract from destination
+            cur.execute("""
+                SELECT stock_id, quantity FROM stock_levels 
+                WHERE inventory_id = %s AND location_id = %s
+            """, (inventory_id, to_location))
+            dest_record = cur.fetchone()
+            if not dest_record:
+                return "Destination stock record not found", 404
+            dest_stock_id, dest_qty = dest_record
+            new_dest_qty = int(dest_qty) - quantity
+            if new_dest_qty < 0:
+                return "Cannot undo transfer: insufficient stock at destination", 400
+            cur.execute("""
+                UPDATE stock_levels SET quantity = %s, last_updated = NOW() WHERE stock_id = %s
+            """, (new_dest_qty, dest_stock_id))
+            # Add back to source
+            cur.execute("""
+                SELECT stock_id, quantity FROM stock_levels 
+                WHERE inventory_id = %s AND location_id = %s
+            """, (inventory_id, from_location))
+            source_record = cur.fetchone()
+            if source_record:
+                source_stock_id, source_qty = source_record
+                new_source_qty = int(source_qty) + quantity
+                cur.execute("""
+                    UPDATE stock_levels SET quantity = %s, last_updated = NOW() WHERE stock_id = %s
+                """, (new_source_qty, source_stock_id))
+            else:
+                cur.execute("""
+                    INSERT INTO stock_levels (inventory_id, location_id, quantity)
+                    VALUES (%s, %s, %s)
+                """, (inventory_id, from_location, quantity))
+        
+        # Remove the movement record (or mark it as undone)
+        cur.execute("DELETE FROM stock_movements WHERE movement_id = %s", (movement_id,))
+        mysql.connection.commit()
+        return redirect(url_for('stock_entry'))
+    except Exception as e:
+        mysql.connection.rollback()
+        print("Error undoing movement:", e)
+        return "Error", 500
+    finally:
+        cur.close()
+
+
+if __name__ == '__main__':  
     app.run(port=5000, debug=True)   
