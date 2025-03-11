@@ -568,15 +568,18 @@ def access_control():
         company_id = admin_info[1]
         
         if request.method == 'POST':
-            # Add custom app assignment
+            # Add custom app assignment with duplicate check
             if 'assign' in request.form:
                 target_user_id = request.form.get('target_user_id')
                 app_id = request.form.get('app_id')
                 if target_user_id and app_id:
-                    cur.execute(
-                        "INSERT INTO user_apps (user_id, app_id, added_to_dashboard) VALUES (%s, %s, TRUE)",
-                        (target_user_id, app_id)
-                    )
+                    cur.execute("""
+                        INSERT INTO user_apps (user_id, app_id, added_to_dashboard) 
+                        SELECT %s, %s, TRUE
+                        WHERE NOT EXISTS (
+                            SELECT 1 FROM user_apps WHERE user_id = %s AND app_id = %s
+                        )
+                    """, (target_user_id, app_id, target_user_id, app_id))
                     mysql.connection.commit()
             # Remove a custom assignment
             elif 'remove_assignment' in request.form:
@@ -595,18 +598,16 @@ def access_control():
             # Process join request (accept/reject)
             elif 'process_request' in request.form:
                 req_id = request.form.get('request_id')
-                decision = request.form.get('decision')  # Expected value from form
+                decision = request.form.get('decision')  # Expected: various forms of approve/reject
                 if req_id and decision:
                     decision_lower = decision.strip().lower()
-                    print("Received decision:", decision_lower)  # Debug output
-                    # Expand allowed values
+                    # Accept additional variants for approval/rejection
                     if decision_lower in ['approve', 'approved', 'accept', 'accepted']:
                         decision_mapped = 'approved'
                     elif decision_lower in ['reject', 'rejected', 'decline', 'declined']:
                         decision_mapped = 'rejected'
                     else:
                         return jsonify({"status": "error", "message": "Invalid decision value: " + decision_lower}), 400
-                    # Update join_requests with the mapped decision
                     cur.execute("UPDATE join_requests SET status = %s WHERE request_id = %s", (decision_mapped, req_id))
                     if decision_mapped == 'approved':
                         cur.execute("SELECT user_id FROM join_requests WHERE request_id = %s", (req_id,))
@@ -717,4 +718,4 @@ def access_control():
         cur.close()
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(port=5000, debug=True)   
