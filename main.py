@@ -209,9 +209,9 @@ def dashboard():
     username = session.get('username')
     try:
         cur = mysql.connection.cursor()
-        # Fetch user info: first_name, user_id, role_name, and company_name
+        # Fetch user info: first_name, user_id, role_name, company_id, company_name, and role_id
         cur.execute("""
-            SELECT u.first_name, u.user_id, r.role_name, c.company_name
+            SELECT u.first_name, u.user_id, r.role_name, c.company_id, c.company_name, u.role_id
             FROM user_data u
             LEFT JOIN roles r ON u.role_id = r.role_id
             LEFT JOIN company_data c ON u.company_id = c.company_id
@@ -220,23 +220,22 @@ def dashboard():
         user_info = cur.fetchone()
         if not user_info:
             return redirect(url_for('login'))
-        first_name, user_id, role_name, company_name = user_info
-        print("DEBUG: company_name =", company_name)
-        print("DEBUG: role_name =", role_name)
         
-        # If company_name is None, try fetching it from employee_data (for non-admins)
-        if not company_name:
-            cur.execute("SELECT company_name FROM employee_data WHERE user_id = %s", (user_id,))
+        first_name, user_id, role_name, company_id, company_name, role_id = user_info
+
+        # If company info is missing, try fetching it from employee_data
+        if not company_id or not company_name:
+            cur.execute("SELECT company_id, company_name FROM employee_data WHERE user_id = %s", (user_id,))
             emp = cur.fetchone()
             if emp:
-                company_name = emp[0]
-        
+                company_id, company_name = emp
+
+        # Store company_id in session for notification endpoints
+        session['company_id'] = company_id
+
+        # Fetch apps (user-specific first, then default based on role)
         apps_to_display = []
-        # Only fetch apps if the user is part of a company
-        cur.execute("SELECT company_id FROM user_data WHERE user_id = %s", (user_id,))
-        comp_result = cur.fetchone()
-        if comp_result and comp_result[0]:
-            # First, try to fetch user-specific apps from user_apps (with dynamic route)
+        if company_id:
             cur.execute("""
                 SELECT a.app_name, a.app_description, a.app_route
                 FROM user_apps ua
@@ -245,38 +244,106 @@ def dashboard():
             """, (user_id,))
             user_apps = cur.fetchall()
             if user_apps:
-                apps_to_display = [
-                    {"app_name": r[0], "app_description": r[1], "app_route": r[2]} 
-                    for r in user_apps
-                ]
-            else:
-                # Fallback: fetch default apps from role_permissions based on role_name (with dynamic route)
-                if role_name:
-                    cur.execute("""
-                        SELECT a.app_name, a.app_description, a.app_route
-                        FROM role_permissions rp
-                        JOIN apps a ON rp.permissions = a.app_id
-                        WHERE rp.role_name = %s
-                    """, (role_name,))
-                    role_apps = cur.fetchall()
-                    apps_to_display = [
-                        {"app_name": r[0], "app_description": r[1], "app_route": r[2]} 
-                        for r in role_apps
-                    ]
+                apps_to_display = [{"app_name": r[0], "app_description": r[1], "app_route": r[2]} for r in user_apps]
+            elif role_name:
+                cur.execute("""
+                    SELECT a.app_name, a.app_description, a.app_route
+                    FROM role_permissions rp
+                    JOIN apps a ON rp.permissions = a.app_id
+                    WHERE rp.role_name = %s
+                """, (role_name,))
+                role_apps = cur.fetchall()
+                apps_to_display = [{"app_name": r[0], "app_description": r[1], "app_route": r[2]} for r in role_apps]
         else:
-            # User not in a company so no company-specific apps are shown.
             apps_to_display = []
-        
+
+        # Fetch low stock alerts with vendor details using vendor_data columns
+        cur.execute("""
+            SELECT id.inventory_id, id.item_name, id.quantity, id.reorder_level, 
+                   vd.vendor_name, vd.vendor_contact, vd.vendor_email
+            FROM inventory_data id
+            LEFT JOIN vendor_data vd ON id.vendor_id = vd.vendor_id
+            WHERE id.quantity <= id.reorder_level AND id.company_id = %s
+        """, (company_id,))
+        low_stock_alerts = cur.fetchall()
+
+        # Fetch notifications (admins only) without vendor columns
+        notifications = []
+        if role_id == 1 and company_id:
+            cur.execute("""
+                SELECT notification_id, user_id, message, notification_type, created_at
+                FROM notifications 
+                WHERE company_id = %s 
+                ORDER BY created_at DESC 
+                LIMIT 10
+            """, (company_id,))
+            notifications = cur.fetchall()
+
         return render_template('dashboard.html',
                                username=username,
                                first_name=first_name or '',
                                company_name=company_name or '',
-                               apps=apps_to_display)
+                               apps=apps_to_display,
+                               notifications=notifications,
+                               low_stock_alerts=low_stock_alerts,
+                               is_admin=(role_id == 1))
     except Exception as e:
         print("Error fetching data:", e)
         return "Error", 500
     finally:
         cur.close()
+
+
+@app.route('/mark_notification/<int:notification_id>', methods=['POST'])
+def mark_notification(notification_id):
+    if not session.get('user_logged_in'):
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    user_id = session.get('user_id')
+    company_id = session.get('company_id')
+    
+    try:
+        cur = mysql.connection.cursor()
+        # Verify that the user is an admin
+        cur.execute("SELECT role_id FROM user_data WHERE user_id = %s", (user_id,))
+        role = cur.fetchone()
+        if not role or role[0] != 1:
+            return jsonify({"status": "error", "message": "Access denied"}), 403
+
+        cur.execute("""
+            DELETE FROM notifications 
+            WHERE notification_id = %s AND company_id = %s
+        """, (notification_id, company_id))
+        mysql.connection.commit()
+        return jsonify({"status": "success", "message": "Notification removed"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+@app.route('/clear_all_notifications', methods=['POST'])
+def clear_all_notifications():
+    if not session.get('user_logged_in'):
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    user_id = session.get('user_id')
+    company_id = session.get('company_id')
+    
+    try:
+        cur = mysql.connection.cursor()
+        # Verify that the user is an admin
+        cur.execute("SELECT role_id FROM user_data WHERE user_id = %s", (user_id,))
+        role = cur.fetchone()
+        if not role or role[0] != 1:
+            return jsonify({"status": "error", "message": "Access denied"}), 403
+
+        cur.execute("DELETE FROM notifications WHERE company_id = %s", (company_id,))
+        mysql.connection.commit()
+        return jsonify({"status": "success", "message": "All notifications cleared"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+
 
 @app.route('/company_join', methods=['POST'])
 def company_join():
@@ -1202,6 +1269,114 @@ def undo_movement():
     finally:
         cur.close()
 
+# analytics
+@app.route('/analytics')
+def analytics():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    
+    username = session.get('username')
+    try:
+        cur = mysql.connection.cursor()
+        # Get company_id for the current user
+        cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
+        result = cur.fetchone()
+        if not result or not result[0]:
+            return "You are not part of a company.", 400
+        company_id = result[0]
+        
+        # Query 1: Total unique inventory items
+        cur.execute("SELECT COUNT(*) FROM inventory_data WHERE company_id = %s", (company_id,))
+        total_items = cur.fetchone()[0]
+        
+        # Query 2: Total stock quantity (using stock_levels joined with inventory_data)
+        cur.execute("""
+            SELECT SUM(sl.quantity)
+            FROM stock_levels sl
+            JOIN inventory_data id ON sl.inventory_id = id.inventory_id
+            WHERE id.company_id = %s
+        """, (company_id,))
+        total_stock = cur.fetchone()[0] or 0
+        
+        # Query 3: Total inventory value (unit_price * quantity)
+        cur.execute("""
+            SELECT SUM(id.unit_price * id.quantity)
+            FROM inventory_data id
+            WHERE id.company_id = %s
+        """, (company_id,))
+        total_value = cur.fetchone()[0] or 0
+        
+        # Query 4: Low stock count (items where quantity <= reorder_level)
+        cur.execute("""
+            SELECT COUNT(*) 
+            FROM inventory_data 
+            WHERE company_id = %s AND quantity <= reorder_level
+        """, (company_id,))
+        low_stock_count = cur.fetchone()[0]
+        
+        # Query 5: Stock movements aggregated by type
+        cur.execute("""
+            SELECT sm.movement_type, SUM(sm.quantity)
+            FROM stock_movements sm
+            JOIN inventory_data id ON sm.inventory_id = id.inventory_id
+            WHERE id.company_id = %s
+            GROUP BY sm.movement_type
+        """, (company_id,))
+        movement_counts = {row[0]: row[1] for row in cur.fetchall()}
+        
+        # Query 6: Inventory distribution by location
+        cur.execute("""
+            SELECT il.location_name, SUM(sl.quantity)
+            FROM stock_levels sl
+            JOIN inventory_data id ON sl.inventory_id = id.inventory_id
+            JOIN inventory_locations il ON sl.location_id = il.location_id
+            WHERE id.company_id = %s
+            GROUP BY il.location_name
+        """, (company_id,))
+        location_distribution = cur.fetchall()
+        
+        # Query 7: Top 5 vendors by items supplied
+        cur.execute("""
+            SELECT vd.vendor_name, COUNT(id.inventory_id) AS total_items_supplied
+            FROM vendor_data vd
+            JOIN inventory_data id ON vd.vendor_id = id.vendor_id
+            WHERE id.company_id = %s
+            GROUP BY vd.vendor_name
+            ORDER BY total_items_supplied DESC
+            LIMIT 5
+        """, (company_id,))
+        vendor_performance = cur.fetchall()
+        
+        # Query 8: Sales Report - Total Sold per Item (using movement_type = 'OUT')
+        cur.execute("""
+            SELECT id.item_name, SUM(sm.quantity) AS total_sold
+            FROM stock_movements sm
+            JOIN inventory_data id ON sm.inventory_id = id.inventory_id
+            WHERE sm.movement_type = 'OUT' AND id.company_id = %s
+            GROUP BY id.item_name
+            ORDER BY total_sold DESC
+        """, (company_id,))
+        sales_report = cur.fetchall()
+        
+        # Prepare sales data for chart: labels and values
+        sales_labels = [row[0] for row in sales_report]
+        sales_values = [row[1] for row in sales_report]
+        
+        return render_template("analytics.html",
+                               total_items=total_items,
+                               total_stock=total_stock,
+                               total_value=total_value,
+                               low_stock_count=low_stock_count,
+                               movement_counts=movement_counts,
+                               location_distribution=location_distribution,
+                               vendor_performance=vendor_performance,
+                               sales_labels=sales_labels,
+                               sales_values=sales_values)
+    except Exception as e:
+        print("Error in analytics:", e)
+        return "Error", 500
+    finally:
+        cur.close()
 
 if __name__ == '__main__':  
     app.run(port=5000, debug=True)   
