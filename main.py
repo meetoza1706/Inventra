@@ -1378,5 +1378,48 @@ def analytics():
     finally:
         cur.close()
 
+@app.route('/vendor_list', methods=['GET', 'POST'])
+def vendor_list():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    
+    username = session.get('username')
+    try:
+        cur = mysql.connection.cursor()
+        # Get company_id for the current user from user_data
+        cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
+        result = cur.fetchone()
+        if not result or result[0] is None:
+            return "You are not part of a company.", 400
+        company_id = result[0]
+
+        # If POST, add/update a vendor
+        if request.method == 'POST':
+            vendor_name = request.form.get('vendor_name')
+            vendor_contact = request.form.get('vendor_contact')
+            vendor_address = request.form.get('vendor_address')
+            vendor_email = request.form.get('vendor_email')
+
+            # Insert new vendor into vendor_data
+            cur.execute("""
+                INSERT INTO vendor_data (company_id, vendor_name, vendor_contact, vendor_address, vendor_email)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (company_id, vendor_name, vendor_contact, vendor_address, vendor_email))
+            mysql.connection.commit()
+
+            return redirect(url_for('vendor_list'))
+
+        # GET: Retrieve all vendors for the current company
+        cur.execute("SELECT vendor_id, vendor_name, vendor_contact, vendor_address, vendor_email FROM vendor_data WHERE company_id = %s", (company_id,))
+        vendors = cur.fetchall()
+
+        return render_template("vendor_list.html", vendors=vendors)
+    except Exception as e:
+        print("Error in vendor_list:", e)
+        return "Error", 500
+    finally:
+        cur.close()
+
+
 if __name__ == '__main__':  
     app.run(port=5000, debug=True)   
