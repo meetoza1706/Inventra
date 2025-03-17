@@ -10,47 +10,58 @@
   <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.css" rel="stylesheet" />
   <style>
     .user-avatar {
-        width: 2rem;
-        height: 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #4b5563;
-        color: white;
-        border-radius: 50%;
-        font-size: 0.875rem;
-        font-weight: bold;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #4b5563;
+      color: white;
+      border-radius: 50%;
+      font-size: 0.875rem;
+      font-weight: bold;
     }
     body {
-        height: 100vh;
-        overflow: hidden;
+      height: 100vh;
+      overflow: hidden;
     }
     .dashboard-content {
-        overflow-y: auto;
-        height: calc(100vh - 80px);
+      overflow-y: auto;
+      height: calc(100vh - 80px);
     }
     .notification-bell {
-        position: relative;
-        font-size: 1.5rem;
-        cursor: pointer;
+      position: relative;
+      font-size: 1.5rem;
+      cursor: pointer;
     }
     .notification-dot {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 10px;
-        height: 10px;
-        background: red;
-        border-radius: 50%;
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      background: red;
+      border-radius: 50%;
+    }
+    /* Notifications dropdown styling */
+    .notifications-dropdown {
+      position: absolute;
+      right: 0;
+      top: 2.5rem;
+      width: 350px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 50;
     }
   </style>
 </head>
 <body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat">
-
   <!-- Header -->
   <div class="mt-5 w-full flex justify-between items-center px-5">
     <div id="time-display" class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
-    <div class="flex items-center">
+    <div class="flex items-center relative">
       <!-- Notification Bell (Admins Only) -->
       {% if is_admin %}
       <div class="relative mr-5">
@@ -58,6 +69,31 @@
         {% if notifications %}
           <span class="notification-dot"></span>
         {% endif %}
+        <!-- Notifications Dropdown -->
+        <div id="notifications-dropdown" class="notifications-dropdown hidden">
+          <div class="p-4 border-b">
+            <h2 class="text-lg font-semibold">Notifications</h2>
+          </div>
+          <div id="notifications-list" class="max-h-60 overflow-y-auto p-4">
+            {% if notifications %}
+              {% for notification in notifications %}
+                <div id="notification-{{ notification[0] }}" class="p-3 mb-2 border-b flex justify-between items-center">
+                  <div>
+                    <p class="text-md font-medium">{{ notification[2] }}</p>
+                    <span class="text-sm text-gray-500">{{ notification[4] }}</span>
+                    {% if notification[3] == 'restock' %}
+                      <button onclick="openVendorModal('{{ notification[5] }}', '{{ notification[6] }}', '{{ notification[7] }}')" class="ml-2 text-blue-600 text-sm">View Vendor</button>
+                    {% endif %}
+                  </div>
+                  <button onclick="markAsRead('{{ notification[0] }}')" class="px-2 py-1 bg-gray-300 text-sm rounded">✔</button>
+                </div>
+              {% endfor %}
+              <button onclick="clearAllNotifications()" class="mt-3 w-full px-4 py-2 bg-red-500 text-white rounded-md">🗑 Clear All</button>
+            {% else %}
+              <p class="text-gray-500 text-md">No new notifications.</p>
+            {% endif %}
+          </div>
+        </div>
       </div>
       {% endif %}
       <div class="flex items-center">
@@ -69,7 +105,7 @@
         <button id="dropdownUserAvatarButton" data-dropdown-toggle="dropdownAvatar" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300" type="button">
           <span class="sr-only">Open user menu</span>
           <div class="user-avatar">M</div>
-        </button>      
+        </button>
         <div id="dropdownAvatar" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
           <ul class="py-2 text-sm text-gray-700">
             <li><a href="{{ url_for('profile') }}" class="block px-4 py-2 hover:bg-gray-100">Hello, {{ first_name if first_name else username }}</a></li>
@@ -82,36 +118,7 @@
       </div>
     </div>
   </div>
-
-  <!-- Notifications Modal (Admins Only) -->
-  {% if is_admin %}
-  <div id="notifications-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
-    <div class="bg-white p-6 rounded shadow-lg max-w-lg w-full">
-      <h2 class="text-xl font-semibold mb-4">Notifications</h2>
-      <div id="notifications-list" class="max-h-80 overflow-y-auto border p-3 rounded">
-        {% if notifications %}
-          {% for notification in notifications %}
-            <div id="notification-{{ notification[0] }}" class="p-3 mb-2 border-b flex justify-between items-center">
-              <div>
-                <p class="text-lg font-medium">{{ notification[2] }}</p>
-                <span class="text-sm text-gray-500">{{ notification[4] }}</span>
-                {% if notification[3] == 'restock' %}
-                  <button onclick="openVendorModal('{{ notification[5] }}', '{{ notification[6] }}', '{{ notification[7] }}')" class="ml-2 text-blue-600">View Vendor</button>
-                {% endif %}
-              </div>
-              <button onclick="markAsRead('{{ notification[0] }}')" class="px-2 py-1 bg-gray-300 text-sm rounded">✔</button>
-            </div>
-          {% endfor %}
-          <button onclick="clearAllNotifications()" class="mt-3 px-4 py-2 bg-red-500 text-white rounded-md w-full">🗑 Clear All</button>
-        {% else %}
-          <p class="text-gray-500 text-lg">No new notifications.</p>
-        {% endif %}
-      </div>
-      <button onclick="closeNotifications()" class="mt-4 px-4 py-2 bg-gray-500 text-white rounded-md w-full">Close</button>
-    </div>
-  </div>
-  {% endif %}
-
+  
   <!-- Vendor Details Modal -->
   <div id="vendor-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center">
     <div class="bg-white p-6 rounded shadow-lg max-w-md">
@@ -119,10 +126,10 @@
       <p><strong>Name:</strong> <span id="vendor-name"></span></p>
       <p><strong>Contact:</strong> <span id="vendor-contact"></span></p>
       <p><strong>Email:</strong> <span id="vendor-email"></span></p>
-      <button onclick="closeVendorModal()" class="mt-4 px-4 py-2 bg-gray-500 text-white rounded-md w-full">Close</button>
+      <button onclick="closeVendorModal()" class="mt-4 w-full px-4 py-2 bg-gray-500 text-white rounded-md">Close</button>
     </div>
   </div>
-
+  
   <!-- Content Row -->
   <div class="dashboard-content mt-6 py-12 px-12 flex flex-wrap gap-12">
     {% for app in apps %}
@@ -144,11 +151,20 @@
     setInterval(updateTime, 5000);
 
     function toggleNotifications() {
-      document.getElementById('notifications-modal').classList.toggle('hidden');
+      document.getElementById('notifications-dropdown').classList.toggle('hidden');
     }
 
-    function closeNotifications() {
-      document.getElementById('notifications-modal').classList.add('hidden');
+    function markAsRead(notificationId) {
+      fetch(`/mark_notification/${notificationId}`, { method: 'POST' })
+          .then(response => response.json())
+          .then(data => { if (data.status === "success") location.reload(); });
+    }
+
+    function clearAllNotifications() {
+      if (!confirm("Are you sure you want to clear all notifications?")) return;
+      fetch(`/clear_all_notifications`, { method: 'POST' })
+          .then(response => response.json())
+          .then(data => { if (data.status === "success") location.reload(); });
     }
 
     function openVendorModal(name, contact, email) {
@@ -162,8 +178,7 @@
       document.getElementById('vendor-modal').classList.add('hidden');
     }
   </script>
-
+  
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
 </body>
 </html>
-<!-- INSERT INTO notifications (user_id, company_id, message, notification_type)  
-VALUES (1, 1, 'Test notification: Low stock on Item XYZ', 'low_stock'); -->

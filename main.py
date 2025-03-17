@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_mysqldb import MySQL
-import uuid
 import datetime
 from flask_cors import CORS
 
@@ -816,30 +815,27 @@ def inventory():
     username = session.get('username')
     try:
         cur = mysql.connection.cursor()
-        # Get company_id for the current user from user_data
+        # Get company_id for the current user
         cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
-        result = cur.fetchone()
+        result = cur.fetchone() #tis one
         if not result or result[0] is None:
             return "You are not part of a company.", 400
         company_id = result[0]
 
-        # If POST, add/update an inventory item
         if request.method == 'POST':
             item_name = request.form.get('item_name')
             quantity = request.form.get('quantity')
             location_id = request.form.get('location_id')
             unit_price = request.form.get('unit_price')
             reorder_level = request.form.get('reorder_level')
-            category = request.form.get('category')
             item_description = request.form.get('item_description')
 
-            # Convert quantity to integer
             try:
                 quantity = int(quantity)
             except ValueError:
                 return "Invalid quantity", 400
 
-            # Check if the item exists (same company, same name, same location)
+            # Check if the item exists
             cur.execute("""
                 SELECT inventory_id, quantity 
                 FROM inventory_data 
@@ -848,18 +844,15 @@ def inventory():
             existing_item = cur.fetchone()
             if existing_item:
                 inventory_id = existing_item[0]
-                current_quantity = int(existing_item[1])
-                new_quantity = current_quantity + quantity
-
-                # Update inventory_data record
+                new_quantity = int(existing_item[1]) + quantity
                 cur.execute("""
                     UPDATE inventory_data 
-                    SET quantity = %s, updated_at = NOW(), unit_price = %s, reorder_level = %s, item_description = %s 
+                    SET quantity = %s, updated_at = NOW(), unit_price = %s, 
+                        reorder_level = %s, item_description = %s 
                     WHERE inventory_id = %s
                 """, (new_quantity, unit_price, reorder_level, item_description, inventory_id))
                 mysql.connection.commit()
 
-                # Update corresponding stock_levels record
                 cur.execute("""
                     SELECT stock_id, quantity 
                     FROM stock_levels 
@@ -867,13 +860,12 @@ def inventory():
                 """, (inventory_id, location_id))
                 stock_record = cur.fetchone()
                 if stock_record:
-                    stock_id, current_stock = stock_record
-                    new_stock = int(current_stock) + quantity
+                    new_stock = int(stock_record[1]) + quantity
                     cur.execute("""
                         UPDATE stock_levels 
                         SET quantity = %s, last_updated = NOW() 
                         WHERE stock_id = %s
-                    """, (new_stock, stock_id))
+                    """, (new_stock, stock_record[0]))
                 else:
                     cur.execute("""
                         INSERT INTO stock_levels (inventory_id, location_id, quantity)
@@ -881,15 +873,14 @@ def inventory():
                     """, (inventory_id, location_id, quantity))
                 mysql.connection.commit()
             else:
-                # Insert new item into inventory_data
                 cur.execute("""
-                    INSERT INTO inventory_data (company_id, item_name, quantity, location_id, unit_price, reorder_level, item_description)
+                    INSERT INTO inventory_data 
+                    (company_id, item_name, quantity, location_id, unit_price, reorder_level, item_description)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """, (company_id, item_name, quantity, location_id, unit_price, reorder_level, item_description))
                 mysql.connection.commit()
                 inventory_id = cur.lastrowid
 
-                # Insert corresponding record into stock_levels
                 cur.execute("""
                     INSERT INTO stock_levels (inventory_id, location_id, quantity)
                     VALUES (%s, %s, %s)
@@ -898,24 +889,29 @@ def inventory():
 
             return redirect(url_for('inventory'))
 
-        # GET: Retrieve all locations for the current company
-        cur.execute("SELECT location_id, location_name FROM inventory_locations WHERE company_id = %s", (company_id,))
+        # GET: Fetch locations for Manage Locations
+        cur.execute("SELECT location_id, location_name, address FROM inventory_locations WHERE company_id = %s", (company_id,))
         locations = cur.fetchall()
 
-        # Dictionary to store inventory per location
-        inventory_by_location = {}
-        for location in locations:
-            location_id, location_name = location
-            cur.execute("""
-                SELECT id.inventory_id, id.item_name, sl.quantity, sl.last_updated
-                FROM stock_levels sl
-                JOIN inventory_data id ON sl.inventory_id = id.inventory_id
-                WHERE id.company_id = %s AND sl.location_id = %s
-                ORDER BY sl.last_updated DESC
-            """, (company_id, location_id))
-            inventory_by_location[location_name] = cur.fetchall()
+        # Create a mapping of location_id to location_name
+        loc_map = {str(loc[0]): loc[1] for loc in locations}
+        # Query all inventory data for the company
+        cur.execute("""
+            SELECT inventory_id, item_name, quantity, location_id, updated_at
+            FROM inventory_data
+            WHERE company_id = %s
+            ORDER BY updated_at DESC
+        """, (company_id,))
+        all_inventory_data = cur.fetchall()
 
-        return render_template("inventory.html", inventory_by_location=inventory_by_location, locations=locations)
+        # Group inventory items by location name
+        inventory_by_location = {}
+        for item in all_inventory_data:
+            inv_id, item_name, quantity, loc_id, updated_at = item
+            loc_key = loc_map.get(str(loc_id), "Unknown")
+            inventory_by_location.setdefault(loc_key, []).append((inv_id, item_name, quantity, updated_at))
+
+        return render_template("inventory.html", locations=locations, inventory_by_location=inventory_by_location)
     except Exception as e:
         print("Error fetching inventory:", e)
         return "Error", 500
@@ -1000,7 +996,6 @@ def delete_location():
     finally:
         cur.close()
 
-#stock_entry
 @app.route('/stock_entry', methods=['GET', 'POST'])
 def stock_entry():
     if not session.get('user_logged_in'):
@@ -1010,7 +1005,7 @@ def stock_entry():
     user_id = session.get('user_id')
     try:
         cur = mysql.connection.cursor()
-        # Get company_id for the current user from user_data
+        # Get company_id for the user
         cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
         result = cur.fetchone()
         if not result or result[0] is None:
@@ -1018,82 +1013,124 @@ def stock_entry():
         company_id = result[0]
         
         if request.method == 'POST':
-            entry_type = request.form.get('entry_type')  # 'add', 'transfer', or 'sold'
+            entry_type = request.form.get('entry_type')
             inventory_id = request.form.get('inventory_id')
             try:
                 quantity = int(request.form.get('quantity'))
             except ValueError:
                 return "Invalid quantity", 400
-
+            
             if entry_type == 'add':
-                # Add Stock: record movement (type 'IN') with performed_by = user_id
                 location_id = request.form.get('location_id')
+                # Record movement (IN)
                 cur.execute("""
                     INSERT INTO stock_movements (inventory_id, from_location, to_location, quantity, movement_type, performed_by)
                     VALUES (%s, NULL, %s, %s, 'IN', %s)
                 """, (inventory_id, location_id, quantity, user_id))
                 mysql.connection.commit()
-                
-                # Update stock_levels record (or insert new) for the location
+                # Update stock_levels
                 cur.execute("""
-                    SELECT stock_id, quantity 
-                    FROM stock_levels 
+                    SELECT stock_id, quantity FROM stock_levels 
                     WHERE inventory_id = %s AND location_id = %s
                 """, (inventory_id, location_id))
                 stock_record = cur.fetchone()
                 if stock_record:
-                    new_quantity = int(stock_record[1]) + quantity
+                    new_stock = int(stock_record[1]) + quantity
                     cur.execute("""
                         UPDATE stock_levels 
                         SET quantity = %s, last_updated = NOW() 
                         WHERE stock_id = %s
-                    """, (new_quantity, stock_record[0]))
+                    """, (new_stock, stock_record[0]))
                 else:
                     cur.execute("""
                         INSERT INTO stock_levels (inventory_id, location_id, quantity)
                         VALUES (%s, %s, %s)
                     """, (inventory_id, location_id, quantity))
                 mysql.connection.commit()
+                # Update inventory_data record for that location
+                cur.execute("""
+                    UPDATE inventory_data 
+                    SET quantity = quantity + %s, updated_at = NOW()
+                    WHERE inventory_id = %s
+                """, (quantity, inventory_id))
+                mysql.connection.commit()
             
             elif entry_type == 'transfer':
-                # Transfer Stock: require from_location and to_location
                 from_location = request.form.get('from_location')
                 to_location = request.form.get('to_location')
-                # Check if sufficient stock exists at the source location
+                # --- Update stock_levels ---
+                # Subtract from source location
                 cur.execute("""
                     SELECT stock_id, quantity 
                     FROM stock_levels 
                     WHERE inventory_id = %s AND location_id = %s
                 """, (inventory_id, from_location))
-                from_record = cur.fetchone()
-                if not from_record or int(from_record[1]) < quantity:
+                from_stock = cur.fetchone()
+                if not from_stock or int(from_stock[1]) < quantity:
                     return "Insufficient stock in the source location", 400
-                new_from_qty = int(from_record[1]) - quantity
+                new_from_stock = int(from_stock[1]) - quantity
                 cur.execute("""
                     UPDATE stock_levels 
                     SET quantity = %s, last_updated = NOW() 
                     WHERE stock_id = %s
-                """, (new_from_qty, from_record[0]))
-                # Add stock to destination location
+                """, (new_from_stock, from_stock[0]))
+                # Add to destination location
                 cur.execute("""
                     SELECT stock_id, quantity 
                     FROM stock_levels 
                     WHERE inventory_id = %s AND location_id = %s
                 """, (inventory_id, to_location))
-                to_record = cur.fetchone()
-                if to_record:
-                    new_to_qty = int(to_record[1]) + quantity
+                to_stock = cur.fetchone()
+                if to_stock:
+                    new_to_stock = int(to_stock[1]) + quantity
                     cur.execute("""
                         UPDATE stock_levels 
                         SET quantity = %s, last_updated = NOW() 
                         WHERE stock_id = %s
-                    """, (new_to_qty, to_record[0]))
+                    """, (new_to_stock, to_stock[0]))
                 else:
                     cur.execute("""
                         INSERT INTO stock_levels (inventory_id, location_id, quantity)
                         VALUES (%s, %s, %s)
                     """, (inventory_id, to_location, quantity))
-                # Record the transfer movement with performed_by = user_id
+                # --- Update inventory_data ---
+                # Get the source inventory_data record (it corresponds to from_location)
+                cur.execute("""
+                    SELECT inventory_id, quantity, item_name, unit_price, reorder_level, item_description
+                    FROM inventory_data
+                    WHERE inventory_id = %s AND location_id = %s
+                """, (inventory_id, from_location))
+                from_inv = cur.fetchone()
+                if not from_inv or int(from_inv[1]) < quantity:
+                    return "Insufficient inventory quantity at source", 400
+                new_from_inv_qty = int(from_inv[1]) - quantity
+                cur.execute("""
+                    UPDATE inventory_data 
+                    SET quantity = %s, updated_at = NOW()
+                    WHERE inventory_id = %s
+                """, (new_from_inv_qty, inventory_id))
+                # Check for an existing record in inventory_data for the destination location
+                cur.execute("""
+                    SELECT inventory_id, quantity 
+                    FROM inventory_data
+                    WHERE company_id = %s AND item_name = %s AND location_id = %s
+                """, (company_id, from_inv[2], to_location))
+                to_inv = cur.fetchone()
+                if to_inv:
+                    new_to_inv_qty = int(to_inv[1]) + quantity
+                    cur.execute("""
+                        UPDATE inventory_data 
+                        SET quantity = %s, updated_at = NOW()
+                        WHERE inventory_id = %s
+                    """, (new_to_inv_qty, to_inv[0]))
+                else:
+                    # Insert a new record for destination with same product details
+                    cur.execute("""
+                        INSERT INTO inventory_data 
+                        (company_id, item_name, quantity, location_id, unit_price, reorder_level, item_description, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+                    """, (company_id, from_inv[2], quantity, to_location, from_inv[3], from_inv[4], from_inv[5]))
+                # Record the transfer movement
                 cur.execute("""
                     INSERT INTO stock_movements (inventory_id, from_location, to_location, quantity, movement_type, performed_by)
                     VALUES (%s, %s, %s, %s, 'TRANSFER', %s)
@@ -1101,7 +1138,6 @@ def stock_entry():
                 mysql.connection.commit()
             
             elif entry_type == 'sold':
-                # Sold Stock: Remove stock from a given location
                 location_id = request.form.get('location_id')
                 cur.execute("""
                     SELECT stock_id, quantity 
@@ -1111,22 +1147,28 @@ def stock_entry():
                 stock_record = cur.fetchone()
                 if not stock_record or int(stock_record[1]) < quantity:
                     return "Insufficient stock in the location", 400
-                new_quantity = int(stock_record[1]) - quantity
+                new_stock = int(stock_record[1]) - quantity
                 cur.execute("""
                     UPDATE stock_levels 
                     SET quantity = %s, last_updated = NOW() 
                     WHERE stock_id = %s
-                """, (new_quantity, stock_record[0]))
-                # Record the sold movement (type 'OUT') with performed_by = user_id
+                """, (new_stock, stock_record[0]))
                 cur.execute("""
                     INSERT INTO stock_movements (inventory_id, from_location, to_location, quantity, movement_type, performed_by)
                     VALUES (%s, %s, NULL, %s, 'OUT', %s)
                 """, (inventory_id, location_id, quantity, user_id))
                 mysql.connection.commit()
+                # Update inventory_data for sold stock (decrease quantity)
+                cur.execute("""
+                    UPDATE inventory_data 
+                    SET quantity = quantity - %s, updated_at = NOW()
+                    WHERE inventory_id = %s AND location_id = %s
+                """, (quantity, inventory_id, location_id))
+                mysql.connection.commit()
             
             return redirect(url_for('stock_entry'))
         
-        # GET: Retrieve products and available locations for the current company
+        # GET: Retrieve products and locations
         cur.execute("SELECT inventory_id, item_name FROM inventory_data WHERE company_id = %s", (company_id,))
         products = cur.fetchall()
         cur.execute("SELECT location_id, location_name FROM inventory_locations WHERE company_id = %s", (company_id,))
@@ -1159,22 +1201,33 @@ def stock_entry():
         
         return render_template("stock_entry.html", products=products, locations=locations, movements=movement_list)
     except Exception as e:
+        mysql.connection.rollback()
         print("Error in stock_entry:", e)
         return "Error", 500
     finally:
         cur.close()
+
 
 @app.route('/undo_movement', methods=['POST'])
 def undo_movement():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
     
+    username = session.get('username')
+    cur = mysql.connection.cursor()
+    # Get company_id for the current user
+    cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
+    result = cur.fetchone()
+    if not result:
+        return "Company not found", 404
+    company_id = result[0]
+    
     movement_id = request.form.get('movement_id')
     if not movement_id:
         return "Movement ID not provided", 400
+
     try:
-        cur = mysql.connection.cursor()
-        # Get the movement details
+        # Retrieve the movement details
         cur.execute("""
             SELECT movement_type, inventory_id, from_location, to_location, quantity 
             FROM stock_movements WHERE movement_id = %s
@@ -1183,12 +1236,11 @@ def undo_movement():
         if not movement:
             return "Movement not found", 404
         
-        movement_type, inventory_id, from_location, to_location, quantity = movement
-        quantity = int(quantity)
+        movement_type, inventory_id, from_location, to_location, qty = movement
+        qty = int(qty)
         
-        # Reverse the movement based on type
         if movement_type == 'IN':
-            # For stock added, subtract it from the destination (location_id = to_location)
+            # Reverse addition: subtract from destination's stock_levels
             cur.execute("""
                 SELECT stock_id, quantity FROM stock_levels 
                 WHERE inventory_id = %s AND location_id = %s
@@ -1196,36 +1248,47 @@ def undo_movement():
             record = cur.fetchone()
             if not record:
                 return "Stock record not found", 404
-            stock_id, current_qty = record
-            new_qty = int(current_qty) - quantity
+            new_qty = int(record[1]) - qty
             if new_qty < 0:
                 return "Cannot undo: insufficient stock", 400
             cur.execute("""
-                UPDATE stock_levels SET quantity = %s, last_updated = NOW() WHERE stock_id = %s
-            """, (new_qty, stock_id))
+                UPDATE stock_levels SET quantity = %s, last_updated = NOW() 
+                WHERE stock_id = %s
+            """, (new_qty, record[0]))
+            # Update inventory_data: subtract qty
+            cur.execute("""
+                UPDATE inventory_data SET quantity = quantity - %s, updated_at = NOW()
+                WHERE inventory_id = %s
+            """, (qty, inventory_id))
         
         elif movement_type == 'OUT':
-            # For sold stock, add the quantity back to the source (location_id = from_location)
+            # Reverse sold: add back to source's stock_levels
             cur.execute("""
                 SELECT stock_id, quantity FROM stock_levels 
                 WHERE inventory_id = %s AND location_id = %s
             """, (inventory_id, from_location))
             record = cur.fetchone()
             if record:
-                stock_id, current_qty = record
-                new_qty = int(current_qty) + quantity
+                new_qty = int(record[1]) + qty
                 cur.execute("""
-                    UPDATE stock_levels SET quantity = %s, last_updated = NOW() WHERE stock_id = %s
-                """, (new_qty, stock_id))
+                    UPDATE stock_levels SET quantity = %s, last_updated = NOW()
+                    WHERE stock_id = %s
+                """, (new_qty, record[0]))
             else:
                 cur.execute("""
                     INSERT INTO stock_levels (inventory_id, location_id, quantity)
                     VALUES (%s, %s, %s)
-                """, (inventory_id, from_location, quantity))
+                """, (inventory_id, from_location, qty))
+            # Update inventory_data: add qty
+            cur.execute("""
+                UPDATE inventory_data SET quantity = quantity + %s, updated_at = NOW()
+                WHERE inventory_id = %s AND location_id = %s
+            """, (qty, inventory_id, from_location))
         
         elif movement_type == 'TRANSFER':
-            # For transfer, subtract from destination and add back to source
-            # Subtract from destination
+            # Reverse transfer: subtract from destination and add back to source
+            
+            # Subtract from destination's stock_levels
             cur.execute("""
                 SELECT stock_id, quantity FROM stock_levels 
                 WHERE inventory_id = %s AND location_id = %s
@@ -1233,32 +1296,49 @@ def undo_movement():
             dest_record = cur.fetchone()
             if not dest_record:
                 return "Destination stock record not found", 404
-            dest_stock_id, dest_qty = dest_record
-            new_dest_qty = int(dest_qty) - quantity
+            new_dest_qty = int(dest_record[1]) - qty
             if new_dest_qty < 0:
                 return "Cannot undo transfer: insufficient stock at destination", 400
             cur.execute("""
-                UPDATE stock_levels SET quantity = %s, last_updated = NOW() WHERE stock_id = %s
-            """, (new_dest_qty, dest_stock_id))
-            # Add back to source
+                UPDATE stock_levels SET quantity = %s, last_updated = NOW()
+                WHERE stock_id = %s
+            """, (new_dest_qty, dest_record[0]))
+            
+            # Add back to source's stock_levels
             cur.execute("""
                 SELECT stock_id, quantity FROM stock_levels 
                 WHERE inventory_id = %s AND location_id = %s
             """, (inventory_id, from_location))
             source_record = cur.fetchone()
             if source_record:
-                source_stock_id, source_qty = source_record
-                new_source_qty = int(source_qty) + quantity
+                new_source_qty = int(source_record[1]) + qty
                 cur.execute("""
-                    UPDATE stock_levels SET quantity = %s, last_updated = NOW() WHERE stock_id = %s
-                """, (new_source_qty, source_stock_id))
+                    UPDATE stock_levels SET quantity = %s, last_updated = NOW()
+                    WHERE stock_id = %s
+                """, (new_source_qty, source_record[0]))
             else:
                 cur.execute("""
                     INSERT INTO stock_levels (inventory_id, location_id, quantity)
                     VALUES (%s, %s, %s)
-                """, (inventory_id, from_location, quantity))
+                """, (inventory_id, from_location, qty))
+            
+            # Reverse inventory_data updates using JOIN to avoid subquery update errors:
+            # Add qty back to source's inventory_data record
+            cur.execute("""
+                UPDATE inventory_data i
+                JOIN (SELECT item_name FROM inventory_data WHERE inventory_id = %s) sub
+                  ON i.company_id = %s AND i.location_id = %s AND i.item_name = sub.item_name
+                SET i.quantity = i.quantity + %s, i.updated_at = NOW()
+            """, (inventory_id, company_id, from_location, qty))
+            # Subtract qty from destination's inventory_data record
+            cur.execute("""
+                UPDATE inventory_data i
+                JOIN (SELECT item_name FROM inventory_data WHERE inventory_id = %s) sub
+                  ON i.company_id = %s AND i.location_id = %s AND i.item_name = sub.item_name
+                SET i.quantity = i.quantity - %s, i.updated_at = NOW()
+            """, (inventory_id, company_id, to_location, qty))
         
-        # Remove the movement record (or mark it as undone)
+        # Finally, delete the movement record
         cur.execute("DELETE FROM stock_movements WHERE movement_id = %s", (movement_id,))
         mysql.connection.commit()
         return redirect(url_for('stock_entry'))
@@ -1419,7 +1499,6 @@ def vendor_list():
         return "Error", 500
     finally:
         cur.close()
-
 
 if __name__ == '__main__':  
     app.run(port=5000, debug=True)   
