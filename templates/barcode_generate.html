@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Generate QR Code</title>
+  </head>
+  <body>
+    <h2>Generate QR Code</h2>
+    <form method="POST">
+      <label>Product:
+        <select name="inventory_id" required>
+          {% for product in products %}
+          <option value="{{ product[0] }}">{{ product[1] }}</option>
+          {% endfor %}
+        </select>
+      </label><br>
+      <label>Location:
+        <select name="location_id" required>
+          {% for loc in locations %}
+          <option value="{{ loc[0] }}">{{ loc[1] }}</option>
+          {% endfor %}
+        </select>
+      </label><br>
+      <label>Quantity: <input type="number" name="quantity" required></label><br>
+      <button type="submit">Generate QR Code</button>
+    </form>
+    {% if qr_code %}
+    <h3>Your QR Code:</h3>
+    <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code">
+    {% endif %}
+  </body>
+</html>

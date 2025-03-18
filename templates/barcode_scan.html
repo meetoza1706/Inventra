@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Scan QR Code</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+  </head>
+  <body>
+    <h2>Scan QR Code</h2>
+    <div id="reader" style="width:300px;"></div>
+    <form action="{{ url_for('stock_entry') }}" method="POST" id="scanForm">
+      <input type="hidden" name="entry_type" value="add">
+      <input type="hidden" name="inventory_id" id="inventory_id">
+      <input type="hidden" name="location_id" id="location_id">
+      <label>Quantity: <input type="number" name="quantity" id="quantity" required></label><br>
+      <button type="submit">Submit Stock Entry</button>
+    </form>
+    <script>
+      function onScanSuccess(decodedText) {
+        const parts = decodedText.split(",");
+        document.getElementById("inventory_id").value = parts[0];
+        document.getElementById("location_id").value = parts[1];
+        if (parts[2]) {
+          document.getElementById("quantity").value = parts[2];
+        }
+        html5QrcodeScanner.clear();
+      }
+      const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+      html5QrcodeScanner.render(onScanSuccess);
+    </script>
+  </body>
+</html>

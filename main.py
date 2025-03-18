@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from flask_mysqldb import MySQL
 import datetime
 from flask_cors import CORS
+import qrcode, io, base64
 
 app = Flask(__name__)
 app.secret_key = '1707'  # Use a strong secret key
@@ -342,7 +343,6 @@ def clear_all_notifications():
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         cur.close()
-
 
 @app.route('/company_join', methods=['POST'])
 def company_join():
@@ -1499,6 +1499,59 @@ def vendor_list():
         return "Error", 500
     finally:
         cur.close()
+
+#QR code
+@app.route('/barcode')
+def barcode_home():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    return render_template("barcode_home.html")
+
+
+@app.route('/barcode/generate', methods=['GET', 'POST'])
+def barcode_generate():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    username = session.get('username')
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
+        result = cur.fetchone()
+        if not result or result[0] is None:
+            return "You are not part of a company.", 400
+        company_id = result[0]
+        # Fetch products and locations for dropdowns
+        cur.execute("SELECT inventory_id, item_name FROM inventory_data WHERE company_id = %s", (company_id,))
+        products = cur.fetchall()
+        cur.execute("SELECT location_id, location_name FROM inventory_locations WHERE company_id = %s", (company_id,))
+        locations = cur.fetchall()
+        
+        if request.method == 'POST':
+            inventory_id = request.form.get('inventory_id')
+            location_id = request.form.get('location_id')
+            quantity = request.form.get('quantity')
+            # Encode data as "inventory_id,location_id,quantity"
+            data = f"{inventory_id},{location_id},{quantity}"
+            qr = qrcode.make(data)
+            buf = io.BytesIO()
+            qr.save(buf, format='PNG')
+            buf.seek(0)
+            img_b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+            return render_template("barcode_generate.html", products=products, locations=locations, qr_code=img_b64)
+        
+        return render_template("barcode_generate.html", products=products, locations=locations)
+    except Exception as e:
+        print("Error in barcode_generate:", e)
+        return "Error", 500
+    finally:
+        cur.close()
+
+
+@app.route('/barcode/scan', methods=['GET'])
+def barcode_scan():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    return render_template("barcode_scan.html")
 
 if __name__ == '__main__':  
     app.run(port=5000, debug=True)   
