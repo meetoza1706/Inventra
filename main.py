@@ -4,6 +4,8 @@ import datetime
 from flask_cors import CORS
 import qrcode, io, base64
 from werkzeug.security import generate_password_hash, check_password_hash
+import smtplib
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 app.secret_key = '1707'  # Use a strong secret key
@@ -621,6 +623,153 @@ def update_employee():
     except Exception as e:
         mysql.connection.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        cur.close()
+
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    
+    user_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not current_password or not new_password or not confirm_password:
+            return jsonify({"status": "error", "message": "All fields are required"}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({"status": "error", "message": "New passwords do not match"}), 400
+        
+        try:
+            cur = mysql.connection.cursor()
+            cur.execute("SELECT password_hash FROM user_data WHERE user_id = %s", (user_id,))
+            result = cur.fetchone()
+            if not result:
+                return jsonify({"status": "error", "message": "User not found"}), 404
+            
+            if not check_password_hash(result[0], current_password):
+                return jsonify({"status": "error", "message": "Current password is incorrect"}), 401
+            
+            new_hash = generate_password_hash(new_password)
+            cur.execute("UPDATE user_data SET password_hash = %s WHERE user_id = %s", (new_hash, user_id))
+            mysql.connection.commit()
+            return jsonify({"status": "success", "message": "Password changed successfully"}), 200
+        
+        except Exception as e:
+            mysql.connection.rollback()
+            return jsonify({"status": "error", "message": str(e)}), 500
+        finally:
+            cur.close()
+    
+    return render_template("change_password.html")
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        # Step 2: OTP submission and password reset
+        if 'otp' in request.form:
+            input_otp = request.form.get('otp').strip()
+            new_password = request.form.get('new_password').strip()
+            confirm_password = request.form.get('confirm_password').strip()
+            if not new_password or not confirm_password:
+                return render_template("forgot_password.html", step=2, error="New password fields are required.")
+            if new_password != confirm_password:
+                return render_template("forgot_password.html", step=2, error="Passwords do not match.")
+            session_otp = session.get('otp')
+            email = session.get('reset_email')
+            if not session_otp or input_otp != session_otp:
+                return render_template("forgot_password.html", step=2, error="Invalid OTP.")
+            try:
+                cur = mysql.connection.cursor()
+                hashed_password = generate_password_hash(new_password)
+                cur.execute("UPDATE user_data SET password_hash = %s WHERE email = %s", (hashed_password, email))
+                mysql.connection.commit()
+                cur.close()
+                session.pop('otp', None)
+                session.pop('reset_email', None)
+                return jsonify({"status": "success", "message": "Password changed successfully. Please login."}), 200
+            except Exception as e:
+                mysql.connection.rollback()
+                return jsonify({"status": "error", "message": str(e)}), 500
+        # Step 1: Email submission to send OTP
+        else:
+            email = request.form.get('email').strip()
+            if not email:
+                return render_template("forgot_password.html", step=1, error="Email is required.")
+            try:
+                cur = mysql.connection.cursor()
+                cur.execute("SELECT email FROM user_data WHERE email = %s", (email,))
+                user = cur.fetchone()
+                cur.close()
+                if not user:
+                    return render_template("forgot_password.html", step=1, error="Email not found.")
+                # Generate OTP
+                otp = str(random.randint(100000, 999999))
+                sender = 'inventra8@gmail.com'
+                recipient = email
+                subject = 'Your OTP for Password Reset'
+                body = f'Your OTP for password reset is: {otp}'
+                msg = MIMEText(body)
+                msg['From'] = sender
+                msg['To'] = recipient
+                msg['Subject'] = subject
+                try:
+                    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+                        server.starttls()
+                        server.login(sender, 'YOUR_APP_PASSWORD')
+                        server.sendmail(sender, recipient, msg.as_string())
+                except Exception as e:
+                    return render_template("forgot_password.html", step=1, error=f"Error sending email: {e}")
+                session['otp'] = otp
+                session['reset_email'] = email
+                return render_template("forgot_password.html", step=2, message="OTP sent to your email.")
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+
+    return render_template("forgot_password.html", step=1)
+
+#notification generation
+def check_and_generate_notification(inventory_id, company_id, user_id):
+    try:
+        cur = mysql.connection.cursor()
+        
+        # Get stock level and reorder level
+        cur.execute("""
+            SELECT SUM(quantity) AS stock_level, reorder_level, item_name 
+            FROM inventory_data 
+            WHERE inventory_id = %s AND company_id = %s
+        """, (inventory_id, company_id))
+        
+        result = cur.fetchone()
+        if not result or result[0] is None:
+            return  # No stock data found
+        
+        stock_level, reorder_level, item_name = result
+        
+        # Check if stock is below the reorder level
+        if stock_level < reorder_level:
+            notification_text = f"⚠️ Low Stock Alert: {item_name} is below reorder level ({stock_level} left)."
+            
+            # Insert notification if it doesn’t already exist
+            cur.execute("""
+                SELECT COUNT(*) FROM notifications 
+                WHERE company_id = %s AND message = %s
+            """, (company_id, notification_text))
+            exists = cur.fetchone()[0]
+            
+            if exists == 0:
+                cur.execute("""
+                    INSERT INTO notifications (user_id, company_id, message, created_at)
+                    VALUES (%s, %s, %s, NOW())
+                """, (user_id, company_id, notification_text))
+                mysql.connection.commit()
+                
+    except Exception as e:
+        print(f"Error in notification generation: {e}")
     finally:
         cur.close()
 
@@ -1666,6 +1815,8 @@ def barcode_scan():
         return redirect(url_for('login'))
     return render_template("barcode_scan.html")
 
+
+
 @app.route('/get_item_location/<int:inventory_id>/<int:location_id>')
 def get_item_location(inventory_id, location_id):
     cursor = mysql.connection.cursor()
@@ -1686,49 +1837,6 @@ def get_item_location(inventory_id, location_id):
         return jsonify({"error": "Invalid inventory or location ID"}), 400
 
     return jsonify({"item_name": item_name, "location_name": location_name})
-
-#notification generation
-def check_and_generate_notification(inventory_id, company_id, user_id):
-    try:
-        cur = mysql.connection.cursor()
-        
-        # Get stock level and reorder level
-        cur.execute("""
-            SELECT SUM(quantity) AS stock_level, reorder_level, item_name 
-            FROM inventory_data 
-            WHERE inventory_id = %s AND company_id = %s
-        """, (inventory_id, company_id))
-        
-        result = cur.fetchone()
-        if not result or result[0] is None:
-            return  # No stock data found
-        
-        stock_level, reorder_level, item_name = result
-        
-        # Check if stock is below the reorder level
-        if stock_level < reorder_level:
-            notification_text = f"⚠️ Low Stock Alert: {item_name} is below reorder level ({stock_level} left)."
-            
-            # Insert notification if it doesn’t already exist
-            cur.execute("""
-                SELECT COUNT(*) FROM notifications 
-                WHERE company_id = %s AND message = %s
-            """, (company_id, notification_text))
-            exists = cur.fetchone()[0]
-            
-            if exists == 0:
-                cur.execute("""
-                    INSERT INTO notifications (user_id, company_id, message, created_at)
-                    VALUES (%s, %s, %s, NOW())
-                """, (user_id, company_id, notification_text))
-                mysql.connection.commit()
-                
-    except Exception as e:
-        print(f"Error in notification generation: {e}")
-    finally:
-        cur.close()
-
-#company delete function
 
 if __name__ == '__main__':  
     app.run(port=5000, debug=True)   

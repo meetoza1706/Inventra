@@ -62,20 +62,32 @@
 
     <script>
         function sendFormData() {
-            let username = document.getElementById('username').value.trim();
-            let email = document.getElementById('email').value.trim();
-            let password = document.getElementById('password').value.trim();
-            let cpassword = document.getElementById('cpassword').value.trim();
+            let username = $('#username').val().trim();
+            let email = $('#email').val().trim();
+            let password = $('#password').val().trim();
+            let cpassword = $('#cpassword').val().trim();
 
+            // Validate all fields are filled
             if (!username || !email || !password || !cpassword) {
-                document.getElementById('result').innerHTML = "All fields are required.";
+                $('#result').text("All fields are required.");
                 return;
             }
 
-            if (password !== cpassword) {
-                document.getElementById('result').innerHTML = "Passwords do not match.";
+            // Validate email format (basic check)
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                $('#result').text("Please enter a valid email address.");
                 return;
             }
+
+            // Check if passwords match
+            if (password !== cpassword) {
+                $('#result').text("Passwords do not match.");
+                return;
+            }
+
+            // Clear any previous error messages
+            $('#result').text("");
 
             $.ajax({
                 type: 'POST',
@@ -84,20 +96,20 @@
                     username: username,
                     email: email,
                     password: password,
-                    cpassword: cpassword  // Added this line
+                    cpassword: cpassword
                 },
                 success: function(response) {
                     if (response.status === "success") {
                         window.location.href = '/login';
                     } else {
-                        document.getElementById('result').innerHTML = response.message || "An error occurred.";
+                        $('#result').text(response.message || "An error occurred.");
                     }
                 },
                 error: function() {
-                    document.getElementById('result').innerHTML = "Server error. Please try again.";
+                    $('#result').text("Server error. Please try again.");
                 }
             });
         }
-     </script>
+    </script>
 </body>
 </html>

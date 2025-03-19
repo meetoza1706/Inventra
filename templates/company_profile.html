@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Company Profile</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Company Profile</title>
 </head>
 <body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat flex justify-center items-center relative overflow-auto">   
-
     <!-- Back Button -->
     <div class="absolute top-4 left-4">
         <a href="{{ url_for('dashboard') }}" class="bg-[#193a63] text-white px-4 py-2 rounded-full flex items-center shadow-md">
@@ -27,6 +26,7 @@
         <h2 class="text-xl font-bold mb-4">Company Profile</h2>
 
         {% if is_admin %}
+        <!-- Update Profile Form -->
         <form action="{{ url_for('company_profile') }}" method="POST">
             <label class="text-gray-700 font-semibold">Company Name</label>
             <input type="text" name="company_name" value="{{ company[0] }}" class="w-full border-gray-300 rounded p-2 mb-2">
@@ -45,15 +45,9 @@
             </label>
             <input type="date" name="date_established" value="{{ company[4] | string }}" class="w-full border-gray-300 rounded p-2 mb-4">
 
-            <div class="flex space-x-2">
-                <button type="submit" name="update_profile" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow-md">
-                    Update
-                </button>
-                <button type="submit" name="delete_company" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 shadow-md"
-                    onclick="return confirm('Are you sure you want to delete the company?');">
-                    Delete Company
-                </button>
-            </div>
+            <button type="submit" name="update_profile" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 shadow-md">
+                Update
+            </button>
         </form>
 
         {% else %}
@@ -81,6 +75,5 @@
         </form>
         {% endif %}
     </div>
-
 </body>
 </html>

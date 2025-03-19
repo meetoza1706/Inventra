@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 
 # Email content
 sender = 'inventra8@gmail.com'
-recipient = 'meetvyas2408@gmail.com'
+recipient = 'ozamee17@gmail.com'
 subject = 'Test Email'
 body = 'This is a test email sent via Gmail SMTP.'
 

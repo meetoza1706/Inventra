@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -53,6 +53,19 @@
       let username = $('#username').val().trim();
       let password = $('#password').val().trim();
 
+      // Simple client-side validation
+      if (username === "") {
+        $('#result').text("Username or email is required.");
+        return;
+      }
+      if (password === "") {
+        $('#result').text("Password is required.");
+        return;
+      }
+      
+      // Clear previous error messages
+      $('#result').text("");
+
       $.ajax({
         type: 'POST',
         url: '/login',
@@ -61,7 +74,7 @@
           password: password
         },
         success: function(response) {
-          if(response.status === "success"){
+          if (response.status === "success") {
             window.location.href = '/dashboard';
           } else {
             $('#result').text(response.message).addClass('text-red-600');
