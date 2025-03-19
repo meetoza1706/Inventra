@@ -61,9 +61,12 @@ style="background-color: #ffffff">
       </div>
 
       <!-- Buttons -->
-      <button type="submit" class="mt-6 w-full bg-[#8DA9C4] font-bold text-black py-3 rounded-lg">
-        <div>CHANGE PASSWORD?</div>
-      </button>
+      <a href="{{ url_for('change_password') }}">
+        <button type="button" class="mt-6 w-full bg-[#8DA9C4] font-bold text-black py-3 rounded-lg"> 
+          CHANGE PASSWORD?
+        </button>
+      </a>
+      
       <button type="button" onclick="sendFormData()" class="mt-4 w-full bg-[#134074] font-bold text-white text-2xl py-3 rounded-lg">
         UPDATE CHANGES
       </button>

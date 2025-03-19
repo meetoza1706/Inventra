@@ -6,6 +6,8 @@ import qrcode, io, base64
 from werkzeug.security import generate_password_hash, check_password_hash
 import smtplib
 from email.mime.text import MIMEText
+import random
+
 
 app = Flask(__name__)
 app.secret_key = '1707'  # Use a strong secret key
@@ -657,7 +659,7 @@ def change_password():
             new_hash = generate_password_hash(new_password)
             cur.execute("UPDATE user_data SET password_hash = %s WHERE user_id = %s", (new_hash, user_id))
             mysql.connection.commit()
-            return jsonify({"status": "success", "message": "Password changed successfully"}), 200
+            return redirect(url_for('dashboard'))
         
         except Exception as e:
             mysql.connection.rollback()
@@ -691,7 +693,7 @@ def forgot_password():
                 cur.close()
                 session.pop('otp', None)
                 session.pop('reset_email', None)
-                return jsonify({"status": "success", "message": "Password changed successfully. Please login."}), 200
+                return redirect(url_for('login'))
             except Exception as e:
                 mysql.connection.rollback()
                 return jsonify({"status": "error", "message": str(e)}), 500
@@ -720,7 +722,7 @@ def forgot_password():
                 try:
                     with smtplib.SMTP('smtp.gmail.com', 587) as server:
                         server.starttls()
-                        server.login(sender, 'YOUR_APP_PASSWORD')
+                        server.login(sender, 'nrse ieig itce hltm')
                         server.sendmail(sender, recipient, msg.as_string())
                 except Exception as e:
                     return render_template("forgot_password.html", step=1, error=f"Error sending email: {e}")
