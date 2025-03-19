@@ -1,31 +1,104 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Scan QR Code</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-  </head>
-  <body>
-    <h2>Scan QR Code</h2>
-    <div id="reader" style="width:300px;"></div>
-    <form action="{{ url_for('stock_entry') }}" method="POST" id="scanForm">
-      <input type="hidden" name="entry_type" value="add">
-      <input type="hidden" name="inventory_id" id="inventory_id">
-      <input type="hidden" name="location_id" id="location_id">
-      <label>Quantity: <input type="number" name="quantity" id="quantity" required></label><br>
-      <button type="submit">Submit Stock Entry</button>
-    </form>
-    <script>
-      function onScanSuccess(decodedText) {
-        const parts = decodedText.split(",");
-        document.getElementById("inventory_id").value = parts[0];
-        document.getElementById("location_id").value = parts[1];
-        if (parts[2]) {
-          document.getElementById("quantity").value = parts[2];
-        }
-        html5QrcodeScanner.clear();
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scan QR Code</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body class="bg-[#edf2ec] flex flex-col justify-center items-center h-screen relative">
+  <!-- Back Button -->
+  <div class="absolute top-4 left-4">
+    <a href="{{ url_for('dashboard') }}" class="bg-[#193a63] text-white px-4 py-2 rounded-full shadow-md">
+      ← Back to Dashboard
+    </a>
+  </div>
+  
+  <!-- Time Display -->
+  <div id="time-display" class="absolute top-4 right-4 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">
+    12:43
+  </div>
+  
+  <!-- Main Container -->
+  <div class="flex flex-col justify-center items-center min-h-screen px-4 py-12">
+    <!-- Scan QR Code Card -->
+    <div class="bg-[#d3dfe4] shadow-xl rounded-xl p-6 w-full max-w-4xl">
+      <h2 class="text-2xl font-bold mb-4">Scan QR Code</h2>
+      
+      <!-- QR Code Scanner -->
+      <div id="reader" class="mx-auto mb-6" style="width:300px;"></div>
+
+      <!-- Scanned Item Details -->
+      <div id="scanned-info" class="hidden mt-4 p-4 bg-white shadow-md rounded-lg">
+        <p class="text-lg"><strong>Item:</strong> <span id="item-name">N/A</span></p>
+        <p class="text-lg"><strong>Location:</strong> <span id="location-name">N/A</span></p>
+      </div>
+      
+      <!-- Scan Form -->
+      <form action="{{ url_for('stock_entry') }}" method="POST" id="scanForm" class="space-y-4">
+        <input type="hidden" name="entry_type" value="add">
+        <input type="hidden" name="inventory_id" id="inventory_id">
+        <input type="hidden" name="location_id" id="location_id">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Quantity</label>
+          <input type="number" name="quantity" id="quantity" required class="mt-1 block w-full border-gray-300 rounded-md p-2">
+        </div>
+        <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
+          Submit Stock Entry
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function onScanSuccess(decodedText) {
+      const parts = decodedText.split(",");
+      if (parts.length < 2) {
+        alert("Invalid QR Code format");
+        return;
       }
-      const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-      html5QrcodeScanner.render(onScanSuccess);
-    </script>
-  </body>
+
+      const inventoryId = parts[0];
+      const locationId = parts[1];
+      const quantity = parts[2] || "";  // Optional Quantity
+
+      document.getElementById("inventory_id").value = inventoryId;
+      document.getElementById("location_id").value = locationId;
+      document.getElementById("quantity").value = quantity;
+
+      // Fetch Item & Location Name
+      fetch(`/get_item_location/${inventoryId}/${locationId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            alert(data.error);
+            return;
+          }
+          document.getElementById("item-name").textContent = data.item_name;
+          document.getElementById("location-name").textContent = data.location_name;
+          document.getElementById("scanned-info").classList.remove("hidden");
+        })
+        .catch(error => console.error("Fetch error:", error));
+
+      html5QrcodeScanner.clear();
+    }
+
+    // Initialize Scanner
+    const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+
+    // Update time every 5 seconds
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours() % 12 || 12;
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
+      document.getElementById('time-display').textContent = time;
+    }
+    updateTime();
+    setInterval(updateTime, 5000);
+  </script>
+</body>
 </html>

@@ -1,133 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Analytics Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-100 p-4">
-  <!-- Navigation Header -->
-  <div class="flex justify-between items-center mb-4">
-    <a href="{{ url_for('dashboard') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md">Back to Dashboard</a>
-    <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-600 text-white rounded-md">Logout</a>
+<body class="bg-[#edf2ec] relative">
+  <!-- Back Button -->
+  <div class="absolute top-4 left-4">
+    <a href="{{ url_for('dashboard') }}" class="bg-[#193a63] text-white px-4 py-2 rounded-full flex items-center shadow-md">
+      ← Back to Dashboard
+    </a>
   </div>
-
-  <!-- Main Content -->
-  <div class="max-w-5xl mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-6">Analytics Dashboard</h1>
-
-    <!-- Inventory Metrics -->
-    <div class="mb-10">
-      <h2 class="text-xl font-semibold mb-2">Inventory Overview</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <h3 class="text-xl font-semibold mb-2">Total Inventory Items</h3>
-          <p class="text-3xl">{{ total_items }}</p>
-        </div>
-        <div>
-          <h3 class="text-xl font-semibold mb-2">Total Stock Quantity</h3>
-          <p class="text-3xl">{{ total_stock }}</p>
-        </div>
-        <div>
-          <h3 class="text-xl font-semibold mb-2">Total Inventory Value</h3>
-          <p class="text-3xl">₹ {{ total_value }}</p>
-        </div>
-        <div>
-          <h3 class="text-xl font-semibold mb-2">Low Stock Alerts</h3>
-          <p class="text-3xl">{{ low_stock_count }}</p>
+  
+  <!-- Time Display -->
+  <div id="time-display" class="absolute top-4 right-4 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">
+    12:43
+  </div>
+  
+  <!-- Main Container with vertical padding -->
+  <div class="flex flex-col justify-center items-center min-h-screen px-4 py-24">
+    <!-- Analytics Dashboard Card -->
+    <div class="bg-[#d3dfe4] shadow-xl rounded-xl p-6 w-full max-w-4xl">
+      <h1 class="text-2xl font-bold mb-6">Analytics Dashboard</h1>
+      
+      <!-- Inventory Metrics -->
+      <div class="mb-10">
+        <h2 class="text-xl font-semibold mb-2">Inventory Overview</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h3 class="text-xl font-semibold mb-2">Total Inventory Items</h3>
+            <p class="text-3xl">{{ total_items }}</p>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold mb-2">Total Stock Quantity</h3>
+            <p class="text-3xl">{{ total_stock }}</p>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold mb-2">Total Inventory Value</h3>
+            <p class="text-3xl">₹ {{ total_value }}</p>
+          </div>
+          <div>
+            <h3 class="text-xl font-semibold mb-2">Low Stock Alerts</h3>
+            <p class="text-3xl">{{ low_stock_count }}</p>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- Stock Movements Summary -->
-    <div class="mb-6">
-      <h2 class="text-xl font-semibold mb-2">Stock Movements Summary</h2>
-      <table class="min-w-full border border-gray-300">
-        <thead class="bg-gray-200">
-          <tr>
-            <th class="px-4 py-2 border">Movement Type</th>
-            <th class="px-4 py-2 border">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if movement_counts %}
-            {% for movement, total in movement_counts.items() %}
-              <tr>
-                <td class="px-4 py-2 border">{{ movement }}</td>
-                <td class="px-4 py-2 border">{{ total }}</td>
-              </tr>
-            {% endfor %}
-          {% else %}
+      
+      <!-- Stock Movements Summary -->
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">Stock Movements Summary</h2>
+        <table class="min-w-full border border-gray-300">
+          <thead class="bg-gray-200">
             <tr>
-              <td class="px-4 py-2 border" colspan="2">No stock movements recorded.</td>
+              <th class="px-4 py-2 border">Movement Type</th>
+              <th class="px-4 py-2 border">Total</th>
             </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Inventory Distribution by Location -->
-    <div class="mb-6">
-      <h2 class="text-xl font-semibold mb-2">Inventory Distribution by Location</h2>
-      <table class="min-w-full border border-gray-300">
-        <thead class="bg-gray-200">
-          <tr>
-            <th class="px-4 py-2 border">Location</th>
-            <th class="px-4 py-2 border">Quantity</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if location_distribution %}
-            {% for location, qty in location_distribution %}
+          </thead>
+          <tbody>
+            {% if movement_counts %}
+              {% for movement, total in movement_counts.items() %}
+                <tr>
+                  <td class="px-4 py-2 border">{{ movement }}</td>
+                  <td class="px-4 py-2 border">{{ total }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
               <tr>
-                <td class="px-4 py-2 border">{{ location }}</td>
-                <td class="px-4 py-2 border">{{ qty }} units</td>
+                <td class="px-4 py-2 border" colspan="2">No stock movements recorded.</td>
               </tr>
-            {% endfor %}
-          {% else %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Inventory Distribution by Location -->
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">Inventory Distribution by Location</h2>
+        <table class="min-w-full border border-gray-300">
+          <thead class="bg-gray-200">
             <tr>
-              <td class="px-4 py-2 border" colspan="2">No location data available.</td>
+              <th class="px-4 py-2 border">Location</th>
+              <th class="px-4 py-2 border">Quantity</th>
             </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Top 5 Vendors -->
-    <div class="mb-6">
-      <h2 class="text-xl font-semibold mb-2">Top 5 Vendors</h2>
-      <table class="min-w-full border border-gray-300">
-        <thead class="bg-gray-200">
-          <tr>
-            <th class="px-4 py-2 border">Vendor</th>
-            <th class="px-4 py-2 border">Items Supplied</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% if vendor_performance %}
-            {% for vendor, total in vendor_performance %}
+          </thead>
+          <tbody>
+            {% if location_distribution %}
+              {% for location, qty in location_distribution %}
+                <tr>
+                  <td class="px-4 py-2 border">{{ location }}</td>
+                  <td class="px-4 py-2 border">{{ qty }} units</td>
+                </tr>
+              {% endfor %}
+            {% else %}
               <tr>
-                <td class="px-4 py-2 border">{{ vendor }}</td>
-                <td class="px-4 py-2 border">{{ total }} items supplied</td>
+                <td class="px-4 py-2 border" colspan="2">No location data available.</td>
               </tr>
-            {% endfor %}
-          {% else %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Top 5 Vendors -->
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">Top 5 Vendors</h2>
+        <table class="min-w-full border border-gray-300">
+          <thead class="bg-gray-200">
             <tr>
-              <td class="px-4 py-2 border" colspan="2">No vendor data available.</td>
+              <th class="px-4 py-2 border">Vendor</th>
+              <th class="px-4 py-2 border">Items Supplied</th>
             </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Sales Chart -->
-    <div class="mb-6">
-      <h2 class="text-xl font-semibold mb-2">Sales Overview</h2>
-      <div>
-        <canvas id="salesChart" class="w-full h-64"></canvas>
+          </thead>
+          <tbody>
+            {% if vendor_performance %}
+              {% for vendor, total in vendor_performance %}
+                <tr>
+                  <td class="px-4 py-2 border">{{ vendor }}</td>
+                  <td class="px-4 py-2 border">{{ total }} items supplied</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td class="px-4 py-2 border" colspan="2">No vendor data available.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Sales Chart -->
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">Sales Overview</h2>
+        <div>
+          <canvas id="salesChart" class="w-full h-64"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -167,45 +176,10 @@
       let hours = now.getHours() % 12 || 12;
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const time = `${String(hours).padStart(2, '0')}:${minutes}`;
-      document.getElementById('time-display') && (document.getElementById('time-display').textContent = time);
+      document.getElementById('time-display').textContent = time;
     }
     updateTime();
     setInterval(updateTime, 5000);
-
-    // Notification and vendor modal functions (placeholders if not used)
-    function toggleNotifications() {
-      document.getElementById('notifications-modal')?.classList.toggle('hidden');
-    }
-
-    function closeNotifications() {
-      document.getElementById('notifications-modal')?.classList.add('hidden');
-    }
-
-    function openVendorModal(name, contact, email) {
-      if (document.getElementById('vendor-modal')) {
-        document.getElementById('vendor-name').textContent = name;
-        document.getElementById('vendor-contact').textContent = contact;
-        document.getElementById('vendor-email').textContent = email;
-        document.getElementById('vendor-modal').classList.remove('hidden');
-      }
-    }
-
-    function closeVendorModal() {
-      document.getElementById('vendor-modal')?.classList.add('hidden');
-    }
-
-    function markAsRead(notificationId) {
-      fetch(`/mark_notification/${notificationId}`, { method: 'POST' })
-        .then(response => response.json())
-        .then(data => { if (data.status === "success") location.reload(); });
-    }
-
-    function clearAllNotifications() {
-      if (!confirm("Are you sure you want to clear all notifications?")) return;
-      fetch(`/clear_all_notifications`, { method: 'POST' })
-        .then(response => response.json())
-        .then(data => { if (data.status === "success") location.reload(); });
-    }
   </script>
 </body>
 </html>

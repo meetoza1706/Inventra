@@ -1,11 +1,61 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Barcode Module</title>
-  </head>
-  <body>
-    <h2>Barcode Module</h2>
-    <a href="{{ url_for('barcode_generate') }}">Generate QR Code</a><br>
-    <a href="{{ url_for('barcode_scan') }}">Scan QR Code</a>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Code Generation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-[#edf2ec] flex flex-col justify-center items-center h-screen relative">
+  <!-- Back Button -->
+  <div class="absolute top-4 left-4">
+    <a href="{{ url_for('dashboard') }}" class="bg-[#193a63] text-white px-4 py-2 rounded-full shadow-md">
+      ← Back to Dashboard
+    </a>
+  </div>
+  
+  <!-- Time Display -->
+  <div id="time-display" class="absolute top-4 right-4 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">
+    12:43
+  </div>
+  
+  <!-- Main Container with vertical padding -->
+  <div class="flex flex-col justify-center items-center min-h-screen px-4 py-12">
+    <!-- QR Code Cards Container -->
+    <div class="flex flex-col md:flex-row gap-8">
+      <!-- Generate QR Card (Clickable Entire Card) -->
+      <a href="{{ url_for('barcode_generate') }}" class="w-full md:w-5/12">
+        <div class="bg-[#d3dfe4] shadow-xl rounded-xl p-8 min-h-[250px] cursor-pointer hover:shadow-2xl transition duration-300">
+          <h2 class="text-2xl font-bold mb-4">Generate QR</h2>
+          <p class="text-gray-700">
+            Click anywhere on this card to generate a QR code.
+          </p>
+        </div>
+      </a>
+      <!-- Scan QR Card (Clickable Entire Card) -->
+      <a href="{{ url_for('barcode_scan') }}" class="w-full md:w-5/12">
+        <div class="bg-[#d3dfe4] shadow-xl rounded-xl p-8 min-h-[250px] cursor-pointer hover:shadow-2xl transition duration-300">
+          <h2 class="text-2xl font-bold mb-4">Scan QR</h2>
+          <p class="text-gray-700">
+            Click anywhere on this card to scan a QR code.
+          </p>
+        </div>
+      </a>
+    </div>
+  </div>
+  
+  <script>
+    // Update time every 5 seconds
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours() % 12 || 12;
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
+      document.getElementById('time-display').textContent = time;
+    }
+    updateTime();
+    setInterval(updateTime, 5000);
+  </script>
+</body>
 </html>

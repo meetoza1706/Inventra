@@ -1520,6 +1520,7 @@ def barcode_generate():
         if not result or result[0] is None:
             return "You are not part of a company.", 400
         company_id = result[0]
+        
         # Fetch products and locations for dropdowns
         cur.execute("SELECT inventory_id, item_name FROM inventory_data WHERE company_id = %s", (company_id,))
         products = cur.fetchall()
@@ -1530,14 +1531,24 @@ def barcode_generate():
             inventory_id = request.form.get('inventory_id')
             location_id = request.form.get('location_id')
             quantity = request.form.get('quantity')
-            # Encode data as "inventory_id,location_id,quantity"
-            data = f"{inventory_id},{location_id},{quantity}"
+            
+            # Fetch item and location names
+            cur.execute("SELECT item_name FROM inventory_data WHERE inventory_id = %s", (inventory_id,))
+            item_name = cur.fetchone()[0]
+            cur.execute("SELECT location_name FROM inventory_locations WHERE location_id = %s", (location_id,))
+            location_name = cur.fetchone()[0]
+            
+            # Encode data with names for better readability
+            data = f"{inventory_id},{location_id},{quantity},{item_name},{location_name}"
             qr = qrcode.make(data)
+            
+            # Save QR code to buffer
             buf = io.BytesIO()
             qr.save(buf, format='PNG')
             buf.seek(0)
             img_b64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-            return render_template("barcode_generate.html", products=products, locations=locations, qr_code=img_b64)
+            
+            return render_template("barcode_generate.html", products=products, locations=locations, qr_code=img_b64, qr_data=data)
         
         return render_template("barcode_generate.html", products=products, locations=locations)
     except Exception as e:
@@ -1547,11 +1558,50 @@ def barcode_generate():
         cur.close()
 
 
+@app.route('/barcode/download_qr')
+def download_qr():
+    """Allows users to download the last generated QR code."""
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    
+    data = request.args.get('data')
+    if not data:
+        return "No QR code found.", 400
+
+    qr = qrcode.make(data)
+    buf = io.BytesIO()
+    qr.save(buf, format='PNG')
+    buf.seek(0)
+
+    return send_file(buf, mimetype="image/png", as_attachment=True, download_name="qr_code.png")
+
+
 @app.route('/barcode/scan', methods=['GET'])
 def barcode_scan():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
     return render_template("barcode_scan.html")
+
+@app.route('/get_item_location/<int:inventory_id>/<int:location_id>')
+def get_item_location(inventory_id, location_id):
+    cursor = mysql.connection.cursor()
+
+    # Fetch item name
+    cursor.execute("SELECT name FROM inventory_data WHERE id = %s", (inventory_id,))
+    item_row = cursor.fetchone()
+    item_name = item_row[0] if item_row else None
+
+    # Fetch location name
+    cursor.execute("SELECT name FROM inventory_locations WHERE id = %s", (location_id,))
+    location_row = cursor.fetchone()
+    location_name = location_row[0] if location_row else None
+
+    cursor.close()
+
+    if not item_name or not location_name:
+        return jsonify({"error": "Invalid inventory or location ID"}), 400
+
+    return jsonify({"item_name": item_name, "location_name": location_name})
 
 if __name__ == '__main__':  
     app.run(port=5000, debug=True)   
