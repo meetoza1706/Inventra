@@ -1471,7 +1471,6 @@ def analytics():
         return "Error", 500
     finally:
         cur.close()
-
 @app.route('/vendor_list', methods=['GET', 'POST'])
 def vendor_list():
     if not session.get('user_logged_in'):
@@ -1487,32 +1486,103 @@ def vendor_list():
             return "You are not part of a company.", 400
         company_id = result[0]
 
-        # If POST, add/update a vendor
+        # POST: Add new vendor (including products column)
         if request.method == 'POST':
             vendor_name = request.form.get('vendor_name')
             vendor_contact = request.form.get('vendor_contact')
             vendor_address = request.form.get('vendor_address')
             vendor_email = request.form.get('vendor_email')
+            vendor_products = request.form.get('vendor_products')  # new column
 
-            # Insert new vendor into vendor_data
             cur.execute("""
-                INSERT INTO vendor_data (company_id, vendor_name, vendor_contact, vendor_address, vendor_email)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (company_id, vendor_name, vendor_contact, vendor_address, vendor_email))
+                INSERT INTO vendor_data 
+                (company_id, vendor_name, vendor_contact, vendor_address, vendor_email, vendor_products)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (company_id, vendor_name, vendor_contact, vendor_address, vendor_email, vendor_products))
             mysql.connection.commit()
-
             return redirect(url_for('vendor_list'))
 
         # GET: Retrieve all vendors for the current company
-        cur.execute("SELECT vendor_id, vendor_name, vendor_contact, vendor_address, vendor_email FROM vendor_data WHERE company_id = %s", (company_id,))
+        cur.execute("""
+            SELECT vendor_id, vendor_name, vendor_contact, vendor_address, vendor_email, vendor_products 
+            FROM vendor_data WHERE company_id = %s
+        """, (company_id,))
         vendors = cur.fetchall()
-
         return render_template("vendor_list.html", vendors=vendors)
     except Exception as e:
         print("Error in vendor_list:", e)
         return "Error", 500
     finally:
         cur.close()
+
+
+@app.route('/vendor/edit/<int:vendor_id>', methods=['GET', 'POST'])
+def edit_vendor(vendor_id):
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    try:
+        cur = mysql.connection.cursor()
+        username = session.get('username')
+        cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
+        company = cur.fetchone()
+        if not company:
+            return "Invalid user", 400
+
+        cur.execute("""
+            SELECT vendor_id, vendor_name, vendor_contact, vendor_address, vendor_email, vendor_products
+            FROM vendor_data
+            WHERE vendor_id = %s AND company_id = %s
+        """, (vendor_id, company[0]))
+        vendor = cur.fetchone()
+        if not vendor:
+            return "Vendor not found", 404
+
+        if request.method == 'POST':
+            vendor_name = request.form.get('vendor_name')
+            vendor_contact = request.form.get('vendor_contact')
+            vendor_address = request.form.get('vendor_address')
+            vendor_email = request.form.get('vendor_email')
+            vendor_products = request.form.get('vendor_products')
+            cur.execute("""
+                UPDATE vendor_data
+                SET vendor_name = %s, vendor_contact = %s, vendor_address = %s, vendor_email = %s, vendor_products = %s
+                WHERE vendor_id = %s AND company_id = %s
+            """, (vendor_name, vendor_contact, vendor_address, vendor_email, vendor_products, vendor_id, company[0]))
+            mysql.connection.commit()
+            return redirect(url_for('vendor_list'))
+        return render_template("edit_vendor.html", vendor=vendor)
+    except Exception as e:
+        print("Edit vendor error:", e)
+        return "Error", 500
+    finally:
+        cur.close()
+
+
+@app.route('/vendor/delete/<int:vendor_id>', methods=['POST'])
+def delete_vendor(vendor_id):
+    if not session.get('user_logged_in'):
+        return redirect(url_for('login'))
+    try:
+        cur = mysql.connection.cursor()
+        username = session.get('username')
+        cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
+        company = cur.fetchone()
+        if not company:
+            return "Invalid user", 400
+
+        cur.execute("SELECT vendor_id FROM vendor_data WHERE vendor_id = %s AND company_id = %s", (vendor_id, company[0]))
+        if not cur.fetchone():
+            return "Unauthorized", 403
+
+        cur.execute("DELETE FROM vendor_data WHERE vendor_id = %s AND company_id = %s", (vendor_id, company[0]))
+        mysql.connection.commit()
+        return redirect(url_for('vendor_list'))
+    except Exception as e:
+        print("Delete vendor error:", e)
+        return "Error", 500
+    finally:
+        cur.close()
+
 
 #QR code
 @app.route('/barcode')

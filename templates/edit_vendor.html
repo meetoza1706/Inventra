@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Vendor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat flex flex-col justify-center items-center relative">
+  <!-- Back Button -->
+  <div class="absolute top-6 left-6">
+    <a href="{{ url_for('vendor_list') }}" class="bg-[#193a63] text-white px-4 py-2 rounded-full flex items-center shadow-md">
+      ← Back to Vendor List
+    </a>
+  </div>
+  
+  <!-- Time Display -->
+  <div id="time-display" class="absolute top-6 right-6 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">00:00</div>
+  
+  <!-- Edit Vendor Card -->
+  <div class="bg-[#d3dfe4] shadow-xl rounded-xl p-6 w-full max-w-4xl">
+    <h2 class="text-xl font-bold mb-4">Edit Vendor</h2>
+    <form action="{{ url_for('edit_vendor', vendor_id=vendor[0]) }}" method="POST">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="vendor_name" class="block text-sm font-medium text-gray-700">Vendor Name</label>
+          <input type="text" id="vendor_name" name="vendor_name" value="{{ vendor[1] }}" class="mt-1 block w-full border-gray-300 rounded-md p-2" required>
+        </div>
+        <div>
+          <label for="vendor_contact" class="block text-sm font-medium text-gray-700">Vendor Contact</label>
+          <input type="text" id="vendor_contact" name="vendor_contact" value="{{ vendor[2] }}" class="mt-1 block w-full border-gray-300 rounded-md p-2" required>
+        </div>
+        <div>
+          <label for="vendor_address" class="block text-sm font-medium text-gray-700">Vendor Address</label>
+          <input type="text" id="vendor_address" name="vendor_address" value="{{ vendor[3] }}" class="mt-1 block w-full border-gray-300 rounded-md p-2" required>
+        </div>
+        <div>
+          <label for="vendor_email" class="block text-sm font-medium text-gray-700">Vendor Email</label>
+          <input type="email" id="vendor_email" name="vendor_email" value="{{ vendor[4] }}" class="mt-1 block w-full border-gray-300 rounded-md p-2" required>
+        </div>
+      </div>
+      <!-- Products Field -->
+      <div class="mt-4">
+        <label for="vendor_products" class="block text-sm font-medium text-gray-700">Products</label>
+        <input type="text" id="vendor_products" name="vendor_products" value="{{ vendor[5] }}" class="mt-1 block w-full border-gray-300 rounded-md p-2">
+      </div>
+      <div class="flex justify-between mt-4">
+        <a href="{{ url_for('vendor_list') }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 shadow-md">
+          Cancel
+        </a>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-md">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <script>
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = String(now.getMinutes()).padStart(2, '0');
+      hours = hours % 12 || 12;
+      const time = `${hours}:${minutes}`;
+      document.getElementById('time-display').textContent = time;
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+  </script>
+</body>
+</html>
