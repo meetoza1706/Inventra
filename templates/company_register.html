@@ -7,44 +7,19 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <title>Register Your Company</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    html, body {
-      height: 100%;
-      overflow: hidden;  
-     }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
     .user-avatar {
-        width: 2rem;
-        height: 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #4b5563; /* Gray-800 */
-        color: white;
-        border-radius: 50%;
-        font-size: 0.875rem; /* Text-sm */
-        font-weight: bold;
+      width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;
+      background-color: #4b5563; color: white; border-radius: 50%; font-size: 0.875rem; font-weight: bold;
     }
-
-    /* Ensures the content stays within the viewport */
-    body {
-        height: 100vh;
-        overflow: hidden;  /* Prevents vertical scrolling */
-    }
-
+    body { height: 100vh; overflow: hidden; }
     .dashboard-content {
-        overflow-y: auto;  /* Enables vertical scrolling within this section if content overflows */
-        height: calc(100vh - 80px);  /* Adjust for header height */
+      overflow-y: auto; height: calc(100vh - 80px);
     }
-
   </style>
 </head>
-<body class="relative w-full h-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0"
-style="background-color: #ffffff">
-
+<body class="relative w-full h-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat z-0" style="background-color: #ffffff">
   <!-- Header -->
   <div class="mt-5 w-full flex justify-between items-center px-5">
     <div id="time-display" class="px-3 bg-[#13315C] text-white rounded-lg text-2xl">12:12</div>
@@ -67,7 +42,7 @@ style="background-color: #ffffff">
               <a href="{{ url_for('logout') }}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">logout</a>
             </li>
           </ul>
-      </div>
+        </div>
       </div>
     </div>
   </div>
@@ -77,107 +52,138 @@ style="background-color: #ffffff">
     <div class="bg-[#b5c2ca] w-auto rounded-3xl shadow-lg p-6">
       <h1 class="text-3xl font-bold text-center mb-2">Register Your Company</h1>
       <hr>
-      <form class="mt-2">
+      <form class="mt-2" id="company-register-form">
         <div class="grid grid-cols-2 gap-4">
           <!-- Company Name -->
           <div>
             <label for="company-name" class="text-lg">Company name</label>
-            <input type="text" id="company-name" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <input type="text" id="company-name" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400" required>
           </div>
-
           <!-- Website -->
           <div>
             <label for="website" class="text-lg">Website</label>
             <input type="text" id="website" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
           </div>
-
           <!-- Email -->
           <div>
             <label for="email" class="text-lg">Email</label>
-            <input type="email" id="email" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <input type="email" id="email" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400" required>
           </div>
-
           <!-- Date Established -->
           <div>
             <label for="date-established" class="text-lg">Date established</label>
-            <input type="date" id="established-da" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <input type="date" id="established-da" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400" required>
           </div>
-
           <!-- Contact Number -->
           <div>
             <label for="contact-number" class="text-lg">Contact number</label>
-            <input type="text" id="contact-number" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <input type="text" id="contact-number" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400" required>
           </div>
-
-          <!-- Status -->
+          <!-- Status as Dropdown -->
           <div>
             <label for="status" class="text-lg">Status</label>
-            <input type="text" id="status" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <select id="status" class="mt-1 w-full px-3 py-2 border rounded-lg bg-[#E8EFFF] focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <option value="Active">Active</option>
+              <option value="Upcoming">Upcoming</option>
+            </select>
           </div>
         </div>
-
         <div class="mt-4 hover:text-blue-600 text-sm">
           <p>Are you finding your company?</p>
         </div>
-
         <button type="button" onclick="sendFormData()" class="mt-4 w-full bg-[#134074] font-bold text-white text-2xl py-2 rounded-lg">
           Submit
         </button>
       </form>
     </div>
   </div>
+
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.2/dist/flowbite.min.js"></script>
   <script>
-    function sendFormData() {
-        let company_name = document.getElementById('company-name').value;
-        let website = document.getElementById('website').value;
-        let email = document.getElementById('email').value;
-        let established_date = document.getElementById('established-da').value;  <!-- Fixed ID -->
-        let contact_number = document.getElementById('contact-number').value;
-        let status = document.getElementById('status').value;
+    function validateFormData() {
+      let company_name = document.getElementById('company-name').value.trim();
+      let website = document.getElementById('website').value.trim();
+      let email = document.getElementById('email').value.trim();
+      let established_date = document.getElementById('established-da').value.trim();
+      let contact_number = document.getElementById('contact-number').value.trim();
 
-        $.ajax({
-            type: 'POST',
-            url: '/company_register',
-            data: {
-                company_name: company_name,
-                website: website,
-                email: email,
-                established_date: established_date,
-                contact_number: contact_number,
-                status: status
-            },
-            success: function(response) {
-                if (response.status === "success") {
-                    console.log("Company registration successful!");
-                    window.location.href = '/dashboard';
-                    // You can redirect or handle success here as needed
-                } else {
-                    console.log(response.message); // Log the error message
-                }
-            },
-            error: function(error) {
-                alert('Error occurred during registration');
-            }
-        });
+      if(company_name === "") {
+         alert("Company name is required");
+         return false;
+      }
+      if(email === "") {
+         alert("Email is required");
+         return false;
+      }
+      let emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if(!emailRegex.test(email)) {
+         alert("Please enter a valid email address");
+         return false;
+      }
+      if(established_date === "") {
+         alert("Established date is required");
+         return false;
+      }
+      if(contact_number === "") {
+         alert("Contact number is required");
+         return false;
+      }
+      if(website !== "") {
+         let urlRegex = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,4}\/?$/;
+         if(!urlRegex.test(website)) {
+             alert("Please enter a valid website URL");
+             return false;
+         }
+      }
+      return true;
     }
-</script>
 
-<script>
-  function updateTime() {
-    const now = new Date();
-    let hours = now.getHours() % 12 || 12; // Convert to 12-hour format, 0 becomes 12
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const time = `${String(hours).padStart(2, '0')}:${minutes}`;
-    
-    // Update the div content
-    document.getElementById('time-display').textContent = time;
-  }
-  
-  updateTime(); // Show time immediately
-  setInterval(updateTime, 5000); // Refresh every 5 seconds
-</script>
+    function sendFormData() {
+      if(!validateFormData()) {
+          return;
+      }
+      let company_name = document.getElementById('company-name').value;
+      let website = document.getElementById('website').value;
+      let email = document.getElementById('email').value;
+      let established_date = document.getElementById('established-da').value;
+      let contact_number = document.getElementById('contact-number').value;
+      let status = document.getElementById('status').value;
 
+      $.ajax({
+          type: 'POST',
+          url: '/company_register',
+          data: {
+              company_name: company_name,
+              website: website,
+              email: email,
+              established_date: established_date,
+              contact_number: contact_number,
+              status: status
+          },
+          success: function(response) {
+              if (response.status === "success") {
+                  console.log("Company registration successful!");
+                  window.location.href = '/dashboard';
+              } else {
+                  console.log(response.message);
+              }
+          },
+          error: function(error) {
+              alert('Error occurred during registration');
+          }
+      });
+    }
+
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours() % 12 || 12; 
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
+      document.getElementById('time-display').textContent = time;
+    }
+    updateTime();
+    setInterval(updateTime, 5000);
+  </script>
 </body>
 </html>

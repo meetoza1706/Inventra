@@ -1728,6 +1728,7 @@ def check_and_generate_notification(inventory_id, company_id, user_id):
     finally:
         cur.close()
 
+#company delete function
 
 if __name__ == '__main__':  
     app.run(port=5000, debug=True)   
