@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
-<body class="bg-[#edf2ec] flex justify-center items-center min-h-screen relative overflow-auto">
+<body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat flex justify-center items-center relative overflow-auto">
   <!-- Back Button -->
   <div class="absolute top-6 left-6">
     <a href="{{ url_for('dashboard') }}" class="bg-[#193a63] text-white px-4 py-2 rounded-full flex items-center shadow-md">
@@ -15,7 +15,7 @@
     </a>
   </div>
   <!-- Time Display -->
-  <div class="absolute top-6 right-6 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">
+  <div id="time-display" class="absolute top-6 right-6 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">
     12:43
   </div>
 
@@ -52,8 +52,8 @@
       {% for location, items in inventory_by_location.items() %}
         <p class="font-semibold">{{ location }}</p>
         <table class="w-full border-collapse border border-gray-300 mb-6">
-          <thead>
-            <tr class="bg-gray-300">
+          <thead class="bg-gray-200">
+            <tr>
               <th class="border p-2">Item Name</th>
               <th class="border p-2">Quantity</th>
               <th class="border p-2">Last Uploaded</th>
@@ -79,8 +79,8 @@
     <!-- Manage Locations -->
     <h3 class="text-lg font-bold mt-6">Manage Locations</h3>
     <table class="w-full border-collapse border border-gray-300 mt-2">
-      <thead>
-        <tr class="bg-gray-300">
+      <thead class="bg-gray-200">
+        <tr>
           <th class="border p-2">Location ID</th>
           <th class="border p-2">Location Name</th>
           <th class="border p-2">Address</th>
@@ -196,6 +196,17 @@
         });
       }
     }
+    
+    // Clock update
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours() % 12 || 12;
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
+      document.getElementById('time-display').textContent = time;
+    }
+    updateTime();
+    setInterval(updateTime, 5000);
   </script>
 </body>
 </html>

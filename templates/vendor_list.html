@@ -7,18 +7,16 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
-<body class="bg-[#edf2ec] flex flex-col justify-center items-center h-screen relative">
+<body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat flex flex-col justify-center items-center relative">
   <!-- Back Button -->
-  <div class="absolute top-4 left-4">
+  <div class="absolute top-6 left-6">
     <a href="{{ url_for('dashboard') }}" class="bg-[#193a63] text-white px-4 py-2 rounded-full flex items-center shadow-md">
       ← Back to Dashboard
     </a>
   </div>
   
   <!-- Time Display -->
-  <div class="absolute top-4 right-4 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">
-    12:43
-  </div>
+  <div id="time-display" class="absolute top-6 right-6 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">00:00</div>
   
   <!-- Vendor List Card -->
   <div class="bg-[#d3dfe4] shadow-xl rounded-xl p-6 w-full max-w-4xl">
@@ -80,5 +78,18 @@
     </div>
     
   </div>
+  
+  <script>
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = String(now.getMinutes()).padStart(2, '0');
+      hours = hours % 12 || 12;
+      const time = `${hours}:${minutes}`;
+      document.getElementById('time-display').textContent = time;
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+  </script>
 </body>
 </html>

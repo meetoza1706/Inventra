@@ -6,7 +6,7 @@
   <title>Company Access Control</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#edf2ec] relative">
+<body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat relative">
   <!-- Back Button -->
   <div class="absolute top-6 left-6">
     <a href="{{ url_for('dashboard') }}" class="bg-[#193a63] text-white px-4 py-2 rounded-full flex items-center shadow-md">
@@ -15,9 +15,7 @@
   </div>
   
   <!-- Time Display -->
-  <div class="absolute top-6 right-6 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">
-    12:43
-  </div>
+  <div id="time-display" class="absolute top-6 right-6 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md"></div>
   
   <!-- Main Container with vertical padding -->
   <div class="flex flex-col justify-center items-center min-h-screen px-4 py-24">
@@ -36,15 +34,10 @@
               {% for user in company_users %}
                 <option value="{{ user[0] }}">
                   {{ user[1] }} (
-                  {% if user[2] == 1 %}
-                    Admin
-                  {% elif user[2] == 2 %}
-                    Manager
-                  {% elif user[2] == 3 %}
-                    Employee
-                  {% else %}
-                    Custom
-                  {% endif %}
+                  {% if user[2] == 1 %} Admin
+                  {% elif user[2] == 2 %} Manager
+                  {% elif user[2] == 3 %} Employee
+                  {% else %} Custom {% endif %}
                   )
                 </option>
               {% endfor %}
@@ -161,15 +154,10 @@
             {% for user in company_users %}
             <option value="{{ user[0] }}">
               {{ user[1] }} (Current:
-              {% if user[2] == 1 %}
-                Admin
-              {% elif user[2] == 2 %}
-                Manager
-              {% elif user[2] == 3 %}
-                Employee
-              {% else %}
-                Custom
-              {% endif %}
+              {% if user[2] == 1 %} Admin
+              {% elif user[2] == 2 %} Manager
+              {% elif user[2] == 3 %} Employee
+              {% else %} Custom {% endif %}
               )
             </option>
             {% endfor %}
@@ -191,5 +179,19 @@
       </form>
     </div>
   </div>
+  
+  <script>
+    // Clock update
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = String(now.getMinutes()).padStart(2, '0');
+      hours = hours % 12 || 12;
+      const time = `${hours}:${minutes}`;
+      document.getElementById('time-display').textContent = time;
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+  </script>
 </body>
 </html>

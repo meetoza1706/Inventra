@@ -6,7 +6,7 @@
     <title>Company Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#edf2ec] flex justify-center items-center h-screen relative">
+<body class="min-h-screen w-full bg-[url('/static/images/landing_page_bg.svg')] bg-cover bg-center bg-no-repeat flex justify-center items-center relative overflow-auto">   
 
     <!-- Back Button -->
     <div class="absolute top-4 left-4">
@@ -41,7 +41,7 @@
             <input type="text" name="website" value="{{ company[3] }}" class="w-full border-gray-300 rounded p-2 mb-2">
 
             <label class="text-gray-700 font-semibold flex items-center">
-                Date Established <span class="ml-auto">📅</span>
+                Date Established
             </label>
             <input type="date" name="date_established" value="{{ company[4] | string }}" class="w-full border-gray-300 rounded p-2 mb-4">
 

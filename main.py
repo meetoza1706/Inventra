@@ -3,6 +3,7 @@ from flask_mysqldb import MySQL
 import datetime
 from flask_cors import CORS
 import qrcode, io, base64
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = '1707'  # Use a strong secret key
@@ -23,39 +24,42 @@ def home():
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
-
 @app.route('/sign_up', methods=['POST', 'GET'])
 def sign_up():
     if request.method == 'POST':
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
-        cpassword = request.form.get('cpassword')
-        
+        cpassword = request.form.get('cpassword')  # Get `cpassword` from the request
+
+        if not username or not email or not password or not cpassword:
+            return jsonify({"status": "failure", "message": "All fields are required"}), 400
+
         if password != cpassword:
             return jsonify({"status": "failure", "message": "Passwords do not match"}), 400
-        
+
+        hashed_password = generate_password_hash(password)  # Hash password before storing
+
         try:
             cur = mysql.connection.cursor()
-            # Check if user already exists
             query = "SELECT username, email FROM user_data WHERE username = %s OR email = %s"
             cur.execute(query, (username, email))
             user = cur.fetchone()
-            
+
             if user:
                 return jsonify({"status": "failure", "message": "User already exists"}), 409
-            else:
-                # Insert new user into user_data using the correct column name
-                insert_query = "INSERT INTO user_data (username, email, password_hash) VALUES (%s, %s, %s)"
-                cur.execute(insert_query, (username, email, password))
-                mysql.connection.commit()
-                return jsonify({"status": "success", "message": "User registered successfully"}), 201
+            
+            insert_query = "INSERT INTO user_data (username, email, password_hash) VALUES (%s, %s, %s)"
+            cur.execute(insert_query, (username, email, hashed_password))
+            mysql.connection.commit()
+            return jsonify({"status": "success", "message": "User registered successfully"}), 201
         except Exception as err:
             print("Registration error:", err)
             return jsonify({"status": "error", "message": str(err)}), 500
         finally:
-            cur.close()
-    
+            if cur:
+                cur.close()
+
     return render_template('sign_up.html')
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -64,53 +68,56 @@ def login():
         return jsonify({"status": "success", "message": "Already logged in"}), 200
 
     if request.method == 'POST':
-        username = request.form.get('username')
+        # Allow login using username or email
+        user_input = request.form.get('username')
         password = request.form.get('password')
 
         try:
             cur = mysql.connection.cursor()
-            # Verify user credentials
-            query = "SELECT * FROM user_data WHERE username = %s AND password_hash = %s"
-            cur.execute(query, (username, password))
+            query = "SELECT * FROM user_data WHERE username = %s OR email = %s"
+            cur.execute(query, (user_input, user_input))
             user = cur.fetchone()
 
-            if user:
-                user_id = user[0]
-                ip_address = request.remote_addr
-                # Check for an active session from the current IP address
-                cur.execute("""
-                    SELECT session_id FROM sessions 
-                    WHERE user_id = %s AND ip_address = %s 
-                      AND is_active = 1 AND expiration_time > NOW()
-                """, (user_id, ip_address))
-                active_session = cur.fetchone()
+            # If no user is found, return "Incorrect username or email"
+            if not user:
+                return jsonify({"status": "failure", "message": "Incorrect username or email"}), 401
 
-                if active_session:
-                    session['user_logged_in'] = True
-                    session['username'] = username
-                    session['user_id'] = user_id
-                else:
-                    # Create a new session record (auto-increment session_id)
-                    login_time = datetime.datetime.now()
-                    expiration_time = login_time + datetime.timedelta(hours=1)
-                    cur.execute("""
-                        INSERT INTO sessions (user_id, login_time, expiration_time, is_active, ip_address) 
-                        VALUES (%s, %s, %s, %s, %s)
-                    """, (user_id, login_time, expiration_time, 1, ip_address))
-                    mysql.connection.commit()
-                    
-                    session['user_logged_in'] = True
-                    session['username'] = username
-                    session['user_id'] = user_id
+            # If user exists but password doesn't match, return "Incorrect password"
+            if not check_password_hash(user[3], password):
+                return jsonify({"status": "failure", "message": "Incorrect password"}), 401
 
-                # Return JSON response to trigger redirection on the client-side
-                return jsonify({"status": "success", "message": "Login successful"}), 200
+            # Login successful
+            user_id = user[0]
+            ip_address = request.remote_addr
+
+            cur.execute("""
+                SELECT session_id FROM sessions 
+                WHERE user_id = %s AND ip_address = %s 
+                  AND is_active = 1 AND expiration_time > NOW()
+            """, (user_id, ip_address))
+            active_session = cur.fetchone()
+
+            if active_session:
+                session['user_logged_in'] = True
+                session['username'] = user_input
+                session['user_id'] = user_id
             else:
-                return jsonify({"status": "failure", "message": "Invalid username or password"}), 401
+                login_time = datetime.datetime.now()
+                expiration_time = login_time + datetime.timedelta(hours=1)
+                cur.execute("""
+                    INSERT INTO sessions (user_id, login_time, expiration_time, is_active, ip_address) 
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (user_id, login_time, expiration_time, 1, ip_address))
+                mysql.connection.commit()
+                session['user_logged_in'] = True
+                session['username'] = user_input
+                session['user_id'] = user_id
+
+            return jsonify({"status": "success", "message": "Login successful"}), 200
 
         except Exception as err:
             print("Login error:", err)
-            return jsonify({"status": "error", "message": str(err)}), 500
+            return jsonify({"message": "Incorrect credentials"}), 500
         finally:
             cur.close()
 
@@ -396,6 +403,7 @@ def pricing():
 @app.route('/about_us')
 def about_us():
     return render_template('about_us.html')
+
 
 @app.route('/test')
 def test():
@@ -1054,6 +1062,8 @@ def stock_entry():
                     WHERE inventory_id = %s
                 """, (quantity, inventory_id))
                 mysql.connection.commit()
+                # <-- Added notification check for "add" branch -->
+                check_and_generate_notification(inventory_id, company_id, user_id)
             
             elif entry_type == 'transfer':
                 from_location = request.form.get('from_location')
@@ -1136,6 +1146,8 @@ def stock_entry():
                     VALUES (%s, %s, %s, %s, 'TRANSFER', %s)
                 """, (inventory_id, from_location, to_location, quantity, user_id))
                 mysql.connection.commit()
+                # <-- Added notification check for "transfer" branch -->
+                check_and_generate_notification(inventory_id, company_id, user_id)
             
             elif entry_type == 'sold':
                 location_id = request.form.get('location_id')
@@ -1165,6 +1177,8 @@ def stock_entry():
                     WHERE inventory_id = %s AND location_id = %s
                 """, (quantity, inventory_id, location_id))
                 mysql.connection.commit()
+                # <-- Added notification check for "sold" branch -->
+                check_and_generate_notification(inventory_id, company_id, user_id)
             
             return redirect(url_for('stock_entry'))
         
@@ -1602,6 +1616,48 @@ def get_item_location(inventory_id, location_id):
         return jsonify({"error": "Invalid inventory or location ID"}), 400
 
     return jsonify({"item_name": item_name, "location_name": location_name})
+
+#notification generation
+def check_and_generate_notification(inventory_id, company_id, user_id):
+    try:
+        cur = mysql.connection.cursor()
+        
+        # Get stock level and reorder level
+        cur.execute("""
+            SELECT SUM(quantity) AS stock_level, reorder_level, item_name 
+            FROM inventory_data 
+            WHERE inventory_id = %s AND company_id = %s
+        """, (inventory_id, company_id))
+        
+        result = cur.fetchone()
+        if not result or result[0] is None:
+            return  # No stock data found
+        
+        stock_level, reorder_level, item_name = result
+        
+        # Check if stock is below the reorder level
+        if stock_level < reorder_level:
+            notification_text = f"⚠️ Low Stock Alert: {item_name} is below reorder level ({stock_level} left)."
+            
+            # Insert notification if it doesn’t already exist
+            cur.execute("""
+                SELECT COUNT(*) FROM notifications 
+                WHERE company_id = %s AND message = %s
+            """, (company_id, notification_text))
+            exists = cur.fetchone()[0]
+            
+            if exists == 0:
+                cur.execute("""
+                    INSERT INTO notifications (user_id, company_id, message, created_at)
+                    VALUES (%s, %s, %s, NOW())
+                """, (user_id, company_id, notification_text))
+                mysql.connection.commit()
+                
+    except Exception as e:
+        print(f"Error in notification generation: {e}")
+    finally:
+        cur.close()
+
 
 if __name__ == '__main__':  
     app.run(port=5000, debug=True)   

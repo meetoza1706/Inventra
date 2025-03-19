@@ -1,69 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>login</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="icon" type="image/png" href="/static/images/Inventra_Logo_Favicon.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="icon" type="image/png" href="/static/images/Inventra_Logo_Favicon.png">
 </head>
 <body style="font-family: poppins;">
-    <div class="flex w-full">
-        <div class="w-1/2 h-screen">
-            <img src="static\images\Inventra-logo.png" alt="Inventra logo" class="px-52 mt-12 ml-[-6%]">
-            <p class="pl-28 mt-44 text-2xl font-medium leading-6">
-                login to your account to streamline your inventory <br><br><br>
-                and take control of your stocks with ease.
-            </p>
-        </div>
-        <div class="w-1/2 h-screen relative">
-            <div class="absolute inset-0 bg-[url('/static/images/Login_BG-cropped.svg')] bg-cover bg-center z-0"></div>
-            <div class="relative z-10 p-8"> 
-                <div class="p-4 mt-28 w-[70%] ml-[15%] bg-[#B5C2CA] shadow-2xl" style="border-radius: 12%;">
-                    <form id="login-form">
-                        <h1 class="text-4xl font-bold text-center mt-8">login</h1> 
-                        <hr style="border:1px solid grey;" class="mb-6">
-                        <label class="text-lg">Username or email</label><br>
-                        <input type="text" class="w-full h-[6vh] rounded-lg bg-[#E8EFFF] p-2 mb-6" id="username" placeholder="Username" required>
-                        <label class="text-lg">Password</label><br>
-                        <input type="password" class="p-2 mb-6 w-full h-[6vh] rounded-lg bg-[#E8EFFF]" id="password" placeholder="Password" required>
-                        <button class="w-full rounded-lg p-1 py-2 text-xl bg-[#134074] text-white mb-8" type="button" onclick="sendFormData()">Login</button>
-                        <div class="flex justify-between mb-8"> 
-                            <a href="{{ url_for('sign_up') }}" class="hover:text-blue-600">Don't have an account?</a>
-                            <a class="hover:text-blue-500">Forgot password?</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div> 
-    </div>
-    <script>
-        function sendFormData() {
-    let username = document.getElementById('username').value;
-    let password = document.getElementById('password').value;
+  <!-- Time Display -->
+  <div id="time-display" class="absolute top-4 right-4 bg-[#193a63] text-white px-4 py-1 rounded-lg shadow-md">12:43</div>
 
-    $.ajax({
+  <div class="flex w-full">
+    <!-- Left Side: Logo & Info -->
+    <div class="w-1/2 h-screen">
+      <img src="/static/images/Inventra-logo.png" alt="Inventra logo" class="px-52 mt-12 ml-[-6%]">
+      <p class="pl-28 mt-44 text-2xl font-medium leading-6">
+        Login to your account to streamline your inventory <br><br><br>
+        and take control of your stocks with ease.
+      </p>
+    </div>
+    <!-- Right Side: Form Container -->
+    <div class="w-1/2 h-screen relative">
+      <div class="absolute inset-0 bg-[url('/static/images/Login_BG-cropped.svg')] bg-cover bg-center z-0"></div>
+      <div class="relative z-10 p-8">
+        <div class="p-4 mt-28 w-[70%] ml-[15%] bg-[#B5C2CA] shadow-2xl" style="border-radius: 12%;">
+          <form id="login-form">
+            <h1 class="text-4xl font-bold text-center mt-8">Login</h1>
+            <hr style="border:1px solid grey;" class="mb-6">
+            <label class="text-lg">Username or email</label><br>
+            <input type="text" class="w-full h-[6vh] rounded-lg bg-[#E8EFFF] p-2 mb-6" id="username" placeholder="Username or Email" required>
+            <label class="text-lg">Password</label><br>
+            <input type="password" class="p-2 mb-6 w-full h-[6vh] rounded-lg bg-[#E8EFFF]" id="password" placeholder="Password" required>
+            <button type="button" onclick="sendFormData()" class="w-full rounded-lg p-1 py-2 text-xl bg-[#134074] text-white mb-8">
+              Login
+            </button>
+            <div class="flex justify-between mb-8">
+              <a href="{{ url_for('sign_up') }}" class="hover:text-blue-600">Don't have an account?</a>
+              <a class="hover:text-blue-500">Forgot password?</a>
+            </div>
+          </form>
+          <!-- Error Message Display -->
+          <div id="result" class="text-red-500 text-center mt-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function sendFormData() {
+      let username = $('#username').val().trim();
+      let password = $('#password').val().trim();
+
+      $.ajax({
         type: 'POST',
         url: '/login',
         data: {
-            username: username,
-            password: password
+          username: username,
+          password: password
         },
-        contentType: 'application/x-www-form-urlencoded',
-        dataType: 'json',
         success: function(response) {
-            if (response.status === "success") {
-                window.location.href = '/dashboard';
-            } else {
-                $('#result').html(response.message);
-            }
+          if(response.status === "success"){
+            window.location.href = '/dashboard';
+          } else {
+            $('#result').text(response.message).addClass('text-red-600');
+          }
         },
-        error: function(error) {
-            $('#result').html('Error occurred');
+        error: function() {
+          $('#result').text("Server error. Please try again.").addClass('text-red-600');
         }
-    });
-}
-    </script>    
+      });
+    }
+
+    function updateTime() {
+      const now = new Date();
+      let hours = now.getHours() % 12 || 12;
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
+      document.getElementById('time-display').textContent = time;
+    }
+    updateTime();
+    setInterval(updateTime, 5000);
+  </script>
 </body>
 </html>
