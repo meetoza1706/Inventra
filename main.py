@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
 from flask_mysqldb import MySQL
 import datetime
 from flask_cors import CORS
@@ -1741,7 +1741,6 @@ def barcode_home():
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
     return render_template("barcode_home.html")
-
 
 @app.route('/barcode/generate', methods=['GET', 'POST'])
 def barcode_generate():

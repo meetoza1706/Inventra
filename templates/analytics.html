@@ -104,33 +104,6 @@
         </table>
       </div>
       
-      <!-- Top 5 Vendors -->
-      <div class="mb-6">
-        <h2 class="text-xl font-semibold mb-2">Top 5 Vendors</h2>
-        <table class="min-w-full border border-gray-300">
-          <thead class="bg-gray-200">
-            <tr>
-              <th class="px-4 py-2 border">Vendor</th>
-              <th class="px-4 py-2 border">Items Supplied</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if vendor_performance %}
-              {% for vendor, total in vendor_performance %}
-                <tr>
-                  <td class="px-4 py-2 border">{{ vendor }}</td>
-                  <td class="px-4 py-2 border">{{ total }} items supplied</td>
-                </tr>
-              {% endfor %}
-            {% else %}
-              <tr>
-                <td class="px-4 py-2 border" colspan="2">No vendor data available.</td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-      
       <!-- Sales Chart -->
       <div class="mb-6">
         <h2 class="text-xl font-semibold mb-2">Sales Overview</h2>

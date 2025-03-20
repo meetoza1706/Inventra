@@ -7,13 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-  <header class="border-b bg-white">
-    <div class="w-full flex flex-col sm:flex-row justify-between items-center py-3">
-        <!-- Logo -->
-        <div class="flex items-center space-x-2 ml-10">
-            <img src="Inventra Logo-19.png" alt="Inventra Logo" class="h-40 w-60">
-        </div>
-
         <!-- Navigation -->
         <nav class="flex flex-row items-center pt-4">
           <div class="w-[40%]">
@@ -22,10 +15,10 @@
           </div>
           <div class="w-[60%]">
               <ul class="flex flex-row gap-[12%]">
-                  <li class="font-poppins text-xl font-bold pt-4"><a href="">Overview</a></li>
-                  <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('pricing') }}">Pricing</a></li>
-                  <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('login') }}">Features</a></li>
-                  <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('about_us') }}">About us</a></li>
+                  <li class="font-poppins text-xl font-bold pt-4">Overview</li>
+                  <li class="font-poppins text-xl font-bold pt-4">Pricing</li>
+                  <li class="font-poppins text-xl font-bold pt-4">Features</li>
+                  <li class="font-poppins text-xl font-bold pt-4">About us</li>
                   <li>
                       <button style="
                 background-color: #134074;
@@ -42,12 +35,10 @@
               </ul>
           </div>
       </nav>
-    </div>
-</header>
-
+  
     <section class="h-screen flex flex-col justify-center items-center px-4 md:px-8">
         <!-- Header Section -->
-        <div class="w-full text-center text-3xl  font-poppins font-semibold poppins ">
+        <div class="w-full text-center text-3xl mt-12  font-poppins font-semibold poppins ">
             ABOUT US
         </div>
 
@@ -155,11 +146,11 @@
     </div>
     
     </div>
-    <section class="py-6 mt-16"> <!-- Added mt-16 for spacing -->
+    <section class="pt-6 mt-16"> <!-- Added mt-16 for spacing -->
       <footer class="container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm text-black rounded-lg p-4 bg-[#B5C2CA]">
         <!-- Logo Section -->
 <div class="flex justify-center items-center">
-  <img src="Inventra Logo-19.png" alt="Inventra Logo" class="w-[200px] h-auto"> <!-- Example width of 200px -->
+  <img src="/static/images/Inventra-logo.png" alt="Inventra Logo" > <!-- Example width of 200px -->
 </div>
 
         
