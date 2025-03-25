@@ -18,10 +18,10 @@
         </div>
         <div class="w-[60%]">
             <ul class="flex flex-row gap-[12%]">
-                <li class="font-poppins text-xl font-bold pt-4">Overview</li>
-                <li class="font-poppins text-xl font-bold pt-4">Pricing</li>
-                <li class="font-poppins text-xl font-bold pt-4">Features</li>
-                <li class="font-poppins text-xl font-bold pt-4">About us</li>
+                <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('home2') }}">Overview</a></li>
+                <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('pricing') }}">Pricing</a></li>
+                <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('features') }}">Features</a></li>
+                <li class="font-poppins text-xl font-bold pt-4"><a href="{{ url_for('about_us') }}">About us</a></li>
                 <li>
                     <button style="
               background-color: #134074;
@@ -45,55 +45,62 @@
     <!-- Pricing Section -->
     <section class="py-16 px-4">
         <h2 class="text-4xl font-poppins font-bold text-center mb-20">Pricing</h2>
-        <div class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-6">
-            <!-- Per Day Card -->
-            <div class="bg-[#B5C2CA] rounded-3xl shadow-2xl p-6 w-72 text-center h-80 mt-8 ml-20">
-                <h3 class="text-2xl font-poppins font-medium mb-4">Per day</h3>
-                <ul class="mb-6">
-                    <li class="mb-2 mr-32">✔ Content 1</li>
-                    <li class="mb-2 mr-32">✔ Content 2</li>
-                    <li class="mb-2 mr-32">✔ Content 3</li>
-                    <li class="mb-2 mr-32">✔ Content 4</li>
-                    <li class="mb-2 mr-32">✔ Content 5</li>
-                    <li class="mr-32">✔ Content 6</li>
-                </ul>
-                <button class="text-2xl w-full bg-[#134074] rounded-lg text-white font-poppins font-bold">$5</button>
+        <div class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Per Day Card -->
+          <div class="bg-[#B5C2CA] rounded-3xl shadow-2xl p-6 w-72 h-96 text-center flex flex-col justify-between mx-auto">
+            <div>
+              <h3 class="text-2xl font-poppins font-medium mb-4">Per Day</h3>
+              <ul class="mb-6 text-left">
+                <li class="mb-2">✔ Inventory Management</li>
+                <li class="mb-2">✔ Stock Entry</li>
+                <li class="mb-2">✔ Barcode/QR Code Scanning</li>
+                <li class="mb-2">✔ Role-Based Access</li>
+                <li class="mb-2">✔ Reports & Analytics</li>
+                <li>✔ Real-Time Notifications</li>
+              </ul>
             </div>
-
-            <!-- Per Annum Card -->
-            <div class="bg-[#B5C2CA]  rounded-3xl shadow-2xl p-6 w-80 text-center h-96 ml-6">
-                <h3 class="text-2xl font-poppins font-medium mb-4">Per annum</h3>
-                <ul class="mb-6">
-                    <li class="mb-4 mr-36">✔ Content 1</li>
-                    <li class="mb-4 mr-36">✔ Content 2</li>
-                    <li class="mb-4 mr-36">✔ Content 3</li>
-                    <li class="mb-4 mr-36">✔ Content 4</li>
-                    <li class="mb-4 mr-36">✔ Content 5</li>
-                    <li class="mr-36">✔ Content 6</li>
-                </ul>
-                <button
-                    class="text-2xl w-full bg-[#134074] rounded-lg text-white font-poppins font-bold mt-4">$1800</button>
+            <button class="text-2xl w-full bg-[#134074] rounded-lg text-white font-poppins font-bold py-2"> $5 </button>
+          </div>
+      
+          <!-- Per Month Card -->
+          <div class="bg-[#B5C2CA] rounded-3xl shadow-2xl p-6 w-72 h-96 text-center flex flex-col justify-between mx-auto">
+            <div>
+              <h3 class="text-2xl font-poppins font-medium mb-4">Per Month</h3>
+              <ul class="mb-6 text-left">
+                <li class="mb-2">✔ Everything in Per Day</li>
+                <li class="mb-2">✔ Multi-Location Tracking</li>
+                <li class="mb-2">✔ Vendor Management</li>
+                <li class="mb-2">✔ Sales & Purchase Tracking</li>
+                <li class="mb-2">✔ Secure Authentication</li>
+                <li>✔ Automated Low Stock Alerts</li>
+              </ul>
             </div>
-
-            <!-- Per Month Card -->
-            <div class="bg-[#B5C2CA] rounded-3xl shadow-2xl p-6 w-72 text-center h-80 mt-8">
-                <h3 class="text-2xl font-poppins font-medium mb-4">Per month</h3>
-                <ul class="mb-6">
-                    <li class="mb-2 mr-32">✔ Content 1</li>
-                    <li class="mb-2 mr-32">✔ Content 2</li>
-                    <li class="mb-2 mr-32">✔ Content 3</li>
-                    <li class="mb-2 mr-32">✔ Content 4</li>
-                    <li class="mb-2 mr-32">✔ Content 5</li>
-                    <li class="mr-32">✔ Content 6</li>
-                </ul>
-                <button class="text-2xl w-full bg-[#134074] rounded-lg text-white font-poppins font-bold">$150</button>
+            <button class="text-2xl w-full bg-[#134074] rounded-lg text-white font-poppins font-bold py-2"> $150 </button>
+          </div>
+      
+          <!-- Per Annum Card -->
+          <div class="bg-[#B5C2CA] rounded-3xl shadow-2xl p-6 w-72 h-96 text-center flex flex-col justify-between mx-auto">
+            <div>
+              <h3 class="text-2xl font-poppins font-medium mb-4">Per Annum</h3>
+              <ul class="mb-6 text-left">
+                <li class="mb-2">✔ Everything in Per Month</li>
+                <li class="mb-2">✔ Advanced Analytics</li>
+                <li class="mb-2">✔ Customizable Role Control</li>
+                <li class="mb-2">✔ Bulk Stock Import/Export</li>
+                <li class="mb-2">✔ Enhanced Security</li>
+                <li>✔ Priority Support</li>
+              </ul>
             </div>
+            <button class="text-2xl w-full bg-[#134074] rounded-lg text-white font-poppins font-bold py-2"> $1800 </button>
+          </div>
         </div>
-    </section>
+      </section>
+      
+      
 
 
     <!-- Footer -->
-    <section class="py-6">
+    <section class="pt-6">
         <footer
             class="container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm text-black rounded-lg p-4 bg-[#B5C2CA]">
             <!-- Logo Section -->
@@ -105,10 +112,10 @@
             <div>
                 <h1 class="font-semibold mb-2 text-black text-2xl">Quick Links</h1>
                 <ul class="space-y-4">
-                    <li><a href="#" class="hover:underline text-black">Overview</a></li>
-                    <li><a href="#" class="hover:underline text-black">Pricing</a></li>
-                    <li><a href="#" class="hover:underline text-black">Features</a></li>
-                    <li><a href="#" class="hover:underline text-black">About Us</a></li>
+                    <li><a href="{{ url_for('home2') }}" class="hover:underline text-black">Overview</a></li>
+                    <li><a href="{{ url_for('pricing') }}" class="hover:underline text-black">Pricing</a></li>
+                    <li><a href="{{ url_for('features') }}" class="hover:underline text-black">Features</a></li>
+                    <li><a href="{{ url_for('about_us') }}" class="hover:underline text-black">About Us</a></li>
                 </ul>
             </div>
 

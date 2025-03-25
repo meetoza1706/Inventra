@@ -404,6 +404,14 @@ def company_join():
 def pricing():
     return render_template('pricing.html')
 
+@app.route('/features', methods=['GET', 'POST'])
+def features():
+    return render_template('test.html')
+
+@app.route('/home2', methods=['GET', 'POST'])
+def home2():
+    return render_template('index.html')
+
 @app.route('/about_us')
 def about_us():
     return render_template('about_us.html')
