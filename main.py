@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
-from flask_mysqldb import MySQL
 import datetime
+import pymysql
 from flask_cors import CORS
 import qrcode, io, base64
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -13,13 +13,13 @@ app = Flask(__name__)
 app.secret_key = '1707'  # Use a strong secret key
 CORS(app)
 
-# MySQL configurations
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'inventra'
+db = pymysql.connect(
+    host="localhost",
+    user="root",
+    password="",
+    database="inventra"
+)
 
-mysql = MySQL(app)
 
 @app.route('/', methods=['GET'])
 def home():
@@ -45,7 +45,7 @@ def sign_up():
         hashed_password = generate_password_hash(password)  # Hash password before storing
 
         try:
-            cur = mysql.connection.cursor()
+            cur = db.cursor()
             query = "SELECT username, email FROM user_data WHERE username = %s OR email = %s"
             cur.execute(query, (username, email))
             user = cur.fetchone()
@@ -55,7 +55,7 @@ def sign_up():
             
             insert_query = "INSERT INTO user_data (username, email, password_hash) VALUES (%s, %s, %s)"
             cur.execute(insert_query, (username, email, hashed_password))
-            mysql.connection.commit()
+            db.commit()
             return jsonify({"status": "success", "message": "User registered successfully"}), 201
         except Exception as err:
             print("Registration error:", err)
@@ -77,7 +77,7 @@ def login():
         password = request.form.get('password')
 
         try:
-            cur = mysql.connection.cursor()
+            cur = db.cursor()
             query = "SELECT * FROM user_data WHERE username = %s OR email = %s"
             cur.execute(query, (user_input, user_input))
             user = cur.fetchone()
@@ -112,7 +112,7 @@ def login():
                     INSERT INTO sessions (user_id, login_time, expiration_time, is_active, ip_address) 
                     VALUES (%s, %s, %s, %s, %s)
                 """, (user_id, login_time, expiration_time, 1, ip_address))
-                mysql.connection.commit()
+                db.commit()
                 session['user_logged_in'] = True
                 session['username'] = user_input
                 session['user_id'] = user_id
@@ -133,9 +133,9 @@ def logout():
     session_id = session.get('session_id')
     if session_id:
         try:
-            cur = mysql.connection.cursor()
+            cur = db.cursor()
             cur.execute("UPDATE sessions SET is_active = 0 WHERE session_id = %s", (session_id,))
-            mysql.connection.commit()
+            db.commit()
         except Exception as e:
             print("Error updating session:", e)
         finally:
@@ -153,7 +153,7 @@ def company_register():
         contact_number = request.form.get('contact_number')
         status = request.form.get('status')
         try:
-            cur = mysql.connection.cursor()
+            cur = db.cursor()
             # Check if company exists
             query = "SELECT company_name, email FROM company_data WHERE company_name = %s AND email = %s"
             cur.execute(query, (company_name, email))
@@ -170,10 +170,10 @@ def company_register():
             company_id = cur.lastrowid
             # Set the company creator as Admin (role_id 1) and update company_id in user_data
             cur.execute("UPDATE user_data SET company_id = %s, role_id = %s WHERE user_id = %s", (company_id, 1, user_id))
-            mysql.connection.commit()
+            db.commit()
             return jsonify({"status": "success", "message": "Company registered successfully"}), 201
         except Exception as err:
-            mysql.connection.rollback()
+            db.rollback()
             return jsonify({"status": "error", "message": str(err)}), 500
         finally:
             cur.close()
@@ -191,7 +191,7 @@ def company_find():
             search = request.form.get('search')
         
         try:
-            cur = mysql.connection.cursor()
+            cur = db.cursor()
             query = "SELECT company_name FROM company_data WHERE company_name LIKE %s"
             cur.execute(query, ('%' + search + '%',))  # Search using LIKE with % for partial match
             # For JSON response, extract company names (assuming company_name is in first column)
@@ -219,7 +219,7 @@ def dashboard():
     
     username = session.get('username')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Fetch user info: first_name, user_id, role_name, company_id, company_name, and role_id
         cur.execute("""
             SELECT u.first_name, u.user_id, r.role_name, c.company_id, c.company_name, u.role_id
@@ -314,7 +314,7 @@ def mark_notification(notification_id):
     company_id = session.get('company_id')
     
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Verify that the user is an admin
         cur.execute("SELECT role_id FROM user_data WHERE user_id = %s", (user_id,))
         role = cur.fetchone()
@@ -325,7 +325,7 @@ def mark_notification(notification_id):
             DELETE FROM notifications 
             WHERE notification_id = %s AND company_id = %s
         """, (notification_id, company_id))
-        mysql.connection.commit()
+        db.commit()
         return jsonify({"status": "success", "message": "Notification removed"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -340,7 +340,7 @@ def clear_all_notifications():
     company_id = session.get('company_id')
     
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Verify that the user is an admin
         cur.execute("SELECT role_id FROM user_data WHERE user_id = %s", (user_id,))
         role = cur.fetchone()
@@ -348,7 +348,7 @@ def clear_all_notifications():
             return jsonify({"status": "error", "message": "Access denied"}), 403
 
         cur.execute("DELETE FROM notifications WHERE company_id = %s", (company_id,))
-        mysql.connection.commit()
+        db.commit()
         return jsonify({"status": "success", "message": "All notifications cleared"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -369,7 +369,7 @@ def company_join():
         return jsonify({"status": "error", "message": "Invalid request"}), 400
         
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Find the company_id based on the company name
         cur.execute("SELECT company_id FROM company_data WHERE company_name = %s", (company_name,))
         company = cur.fetchone()
@@ -391,10 +391,10 @@ def company_join():
             "INSERT INTO join_requests (user_id, company_id, status, created_at) VALUES (%s, %s, 'pending', NOW())",
             (user_id, company_id)
         )
-        mysql.connection.commit()
+        db.commit()
         return jsonify({"status": "success", "message": "Join request sent."}), 200
     except Exception as e:
-        mysql.connection.rollback()
+        db.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         cur.close()
@@ -426,7 +426,7 @@ def profile():
     user_id = session.get('user_id')
     
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
 
         # Fetch email and username for the given user_id
         fetch_query = """
@@ -452,7 +452,7 @@ def profile():
         last_name = request.form.get('last_name')
 
         try:
-            cur = mysql.connection.cursor()
+            cur = db.cursor()
 
             # Update first_name and last_name in the user_data table
             update_query = """
@@ -461,7 +461,7 @@ def profile():
                 WHERE user_id = %s
             """
             cur.execute(update_query, (first_name, last_name, user_id))
-            mysql.connection.commit()
+            db.commit()
 
             return jsonify({"status": "success", "message": "User data updated successfully"}), 200
         except Exception as err:
@@ -477,7 +477,7 @@ def company_profile():
         return redirect(url_for('login'))
     user_id = session.get('user_id')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Get user's company and role
         cur.execute("SELECT company_id, role_id FROM user_data WHERE user_id = %s", (user_id,))
         user_data = cur.fetchone()
@@ -502,7 +502,7 @@ def company_profile():
                         SET company_name = %s, email = %s, contact_number = %s, website = %s, date_established = %s 
                         WHERE company_id = %s
                     """, (company_name, email, contact_number, website, date_established, company_id))
-                    mysql.connection.commit()
+                    db.commit()
                     return redirect(url_for('company_profile'))
                 elif 'delete_company' in request.form:
                     # For now, just display a message (deletion will be implemented later)
@@ -514,7 +514,7 @@ def company_profile():
                     cur.execute("DELETE FROM user_apps WHERE user_id = %s", (user_id,))
                     # Remove company association and role_id from user_data
                     cur.execute("UPDATE user_data SET company_id = NULL, role_id = NULL WHERE user_id = %s", (user_id,))
-                    mysql.connection.commit()
+                    db.commit()
                     return redirect(url_for('dashboard'))
                     
         # GET: fetch company profile details
@@ -540,7 +540,7 @@ def add_employee():
         return redirect(url_for('login'))
     admin_user_id = session.get('user_id')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Only Admin can add employee records
         cur.execute("SELECT role_id, company_id FROM user_data WHERE user_id = %s", (admin_user_id,))
         admin_info = cur.fetchone()
@@ -560,10 +560,10 @@ def add_employee():
             INSERT INTO employee_data (user_id, company_id, company_name, role_id, when_joined)
             VALUES (%s, %s, %s, %s, %s)
         """, (user_id, company_id, company_name, role_id, when_joined))
-        mysql.connection.commit()
+        db.commit()
         return jsonify({"status": "success", "message": "Employee added"}), 200
     except Exception as e:
-        mysql.connection.rollback()
+        db.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         cur.close()
@@ -574,7 +574,7 @@ def remove_employee():
         return redirect(url_for('login'))
     admin_user_id = session.get('user_id')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Only Admin can remove employee records
         cur.execute("SELECT role_id FROM user_data WHERE user_id = %s", (admin_user_id,))
         admin_info = cur.fetchone()
@@ -584,10 +584,10 @@ def remove_employee():
         if not employee_id:
             return jsonify({"status": "error", "message": "Missing employee_id"}), 400
         cur.execute("DELETE FROM employee_data WHERE employee_id = %s", (employee_id,))
-        mysql.connection.commit()
+        db.commit()
         return jsonify({"status": "success", "message": "Employee removed"}), 200
     except Exception as e:
-        mysql.connection.rollback()
+        db.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         cur.close()
@@ -598,7 +598,7 @@ def update_employee():
         return redirect(url_for('login'))
     admin_user_id = session.get('user_id')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Only Admin can update employee records
         cur.execute("SELECT role_id FROM user_data WHERE user_id = %s", (admin_user_id,))
         admin_info = cur.fetchone()
@@ -628,10 +628,10 @@ def update_employee():
         params.append(employee_id)
         query = "UPDATE employee_data SET " + ", ".join(update_fields) + " WHERE employee_id = %s"
         cur.execute(query, tuple(params))
-        mysql.connection.commit()
+        db.commit()
         return jsonify({"status": "success", "message": "Employee updated"}), 200
     except Exception as e:
-        mysql.connection.rollback()
+        db.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         cur.close()
@@ -655,7 +655,7 @@ def change_password():
             return jsonify({"status": "error", "message": "New passwords do not match"}), 400
         
         try:
-            cur = mysql.connection.cursor()
+            cur = db.cursor()
             cur.execute("SELECT password_hash FROM user_data WHERE user_id = %s", (user_id,))
             result = cur.fetchone()
             if not result:
@@ -666,11 +666,11 @@ def change_password():
             
             new_hash = generate_password_hash(new_password)
             cur.execute("UPDATE user_data SET password_hash = %s WHERE user_id = %s", (new_hash, user_id))
-            mysql.connection.commit()
+            db.commit()
             return redirect(url_for('dashboard'))
         
         except Exception as e:
-            mysql.connection.rollback()
+            db.rollback()
             return jsonify({"status": "error", "message": str(e)}), 500
         finally:
             cur.close()
@@ -694,16 +694,16 @@ def forgot_password():
             if not session_otp or input_otp != session_otp:
                 return render_template("forgot_password.html", step=2, error="Invalid OTP.")
             try:
-                cur = mysql.connection.cursor()
+                cur = db.cursor()
                 hashed_password = generate_password_hash(new_password)
                 cur.execute("UPDATE user_data SET password_hash = %s WHERE email = %s", (hashed_password, email))
-                mysql.connection.commit()
+                db.commit()
                 cur.close()
                 session.pop('otp', None)
                 session.pop('reset_email', None)
                 return redirect(url_for('login'))
             except Exception as e:
-                mysql.connection.rollback()
+                db.rollback()
                 return jsonify({"status": "error", "message": str(e)}), 500
         # Step 1: Email submission to send OTP
         else:
@@ -711,7 +711,7 @@ def forgot_password():
             if not email:
                 return render_template("forgot_password.html", step=1, error="Email is required.")
             try:
-                cur = mysql.connection.cursor()
+                cur = db.cursor()
                 cur.execute("SELECT email FROM user_data WHERE email = %s", (email,))
                 user = cur.fetchone()
                 cur.close()
@@ -745,7 +745,7 @@ def forgot_password():
 #notification generation
 def check_and_generate_notification(inventory_id, company_id, user_id):
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         
         # Get stock level and reorder level
         cur.execute("""
@@ -776,7 +776,7 @@ def check_and_generate_notification(inventory_id, company_id, user_id):
                     INSERT INTO notifications (user_id, company_id, message, created_at)
                     VALUES (%s, %s, %s, NOW())
                 """, (user_id, company_id, notification_text))
-                mysql.connection.commit()
+                db.commit()
                 
     except Exception as e:
         print(f"Error in notification generation: {e}")
@@ -792,7 +792,7 @@ def access_control():
     
     admin_user_id = session.get('user_id')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Verify current user is Admin and fetch company_id
         cur.execute("SELECT role_id, company_id FROM user_data WHERE user_id = %s", (admin_user_id,))
         admin_info = cur.fetchone()
@@ -818,13 +818,13 @@ def access_control():
                             INSERT INTO user_apps (user_id, app_id, added_to_dashboard) 
                             VALUES (%s, %s, TRUE)
                         """, (target_user_id, app_id))
-                        mysql.connection.commit()
+                        db.commit()
             # Remove a custom assignment
             elif 'remove_assignment' in request.form:
                 assignment_id = request.form.get('assignment_id')
                 if assignment_id:
                     cur.execute("DELETE FROM user_apps WHERE user_app_id = %s", (assignment_id,))
-                    mysql.connection.commit()
+                    db.commit()
             # Remove default access by inserting an override record
             elif 'remove_default' in request.form:
                 target_user_id = request.form.get('target_user_id')
@@ -832,7 +832,7 @@ def access_control():
                 if target_user_id and app_id:
                     cur.execute("INSERT INTO user_apps (user_id, app_id, added_to_dashboard) VALUES (%s, %s, 0)", 
                                 (target_user_id, app_id))
-                    mysql.connection.commit()
+                    db.commit()
             # Process join request (accept/reject)
             elif 'process_request' in request.form:
                 req_id = request.form.get('request_id')
@@ -855,14 +855,14 @@ def access_control():
                             join_user_id = join_user[0]
                             cur.execute("UPDATE user_data SET company_id = %s, role_id = %s WHERE user_id = %s",
                                         (company_id, 3, join_user_id))
-                    mysql.connection.commit()
+                    db.commit()
             # Upgrade a user's role
             elif 'upgrade_role' in request.form:
                 target_user_id = request.form.get('upgrade_target_user_id')
                 new_role = request.form.get('new_role')
                 if target_user_id and new_role:
                     cur.execute("UPDATE user_data SET role_id = %s WHERE user_id = %s", (new_role, target_user_id))
-                    mysql.connection.commit()
+                    db.commit()
             return redirect(url_for('access_control'))
         
         # GET section:
@@ -981,7 +981,7 @@ def inventory():
     
     username = session.get('username')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Get company_id for the current user
         cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
         result = cur.fetchone() #tis one
@@ -1018,7 +1018,7 @@ def inventory():
                         reorder_level = %s, item_description = %s 
                     WHERE inventory_id = %s
                 """, (new_quantity, unit_price, reorder_level, item_description, inventory_id))
-                mysql.connection.commit()
+                db.commit()
 
                 cur.execute("""
                     SELECT stock_id, quantity 
@@ -1038,21 +1038,21 @@ def inventory():
                         INSERT INTO stock_levels (inventory_id, location_id, quantity)
                         VALUES (%s, %s, %s)
                     """, (inventory_id, location_id, quantity))
-                mysql.connection.commit()
+                db.commit()
             else:
                 cur.execute("""
                     INSERT INTO inventory_data 
                     (company_id, item_name, quantity, location_id, unit_price, reorder_level, item_description)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """, (company_id, item_name, quantity, location_id, unit_price, reorder_level, item_description))
-                mysql.connection.commit()
+                db.commit()
                 inventory_id = cur.lastrowid
 
                 cur.execute("""
                     INSERT INTO stock_levels (inventory_id, location_id, quantity)
                     VALUES (%s, %s, %s)
                 """, (inventory_id, location_id, quantity))
-                mysql.connection.commit()
+                db.commit()
 
             return redirect(url_for('inventory'))
 
@@ -1095,7 +1095,7 @@ def add_location():
     user_id = session.get('user_id')
 
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Fetch the company_id of the current user
         cur.execute("SELECT company_id FROM user_data WHERE user_id = %s", (user_id,))
         company = cur.fetchone()
@@ -1108,7 +1108,7 @@ def add_location():
             INSERT INTO inventory_locations (company_id, location_name, address)
             VALUES (%s, %s, %s)
         """, (company_id, location_name, address))
-        mysql.connection.commit()
+        db.commit()
 
         location_id = cur.lastrowid  # Get the inserted location's ID
         return jsonify({"status": "success", "location_id": location_id})
@@ -1130,16 +1130,16 @@ def edit_location():
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
     
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         cur.execute("""
             UPDATE inventory_locations
             SET location_name = %s, address = %s
             WHERE location_id = %s
         """, (new_location_name, new_address, location_id))
-        mysql.connection.commit()
+        db.commit()
         return jsonify({"status": "success", "message": "Location updated", "location_id": location_id, "location_name": new_location_name})
     except Exception as e:
-        mysql.connection.rollback()
+        db.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         cur.close()
@@ -1153,12 +1153,12 @@ def delete_location():
     if not location_id:
         return jsonify({"status": "error", "message": "Location ID required"}), 400
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         cur.execute("DELETE FROM inventory_locations WHERE location_id = %s", (location_id,))
-        mysql.connection.commit()
+        db.commit()
         return jsonify({"status": "success", "message": "Location deleted", "location_id": location_id})
     except Exception as e:
-        mysql.connection.rollback()
+        db.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
     finally:
         cur.close()
@@ -1171,7 +1171,7 @@ def stock_entry():
     username = session.get('username')
     user_id = session.get('user_id')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Get company_id for the user
         cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
         result = cur.fetchone()
@@ -1194,7 +1194,7 @@ def stock_entry():
                     INSERT INTO stock_movements (inventory_id, from_location, to_location, quantity, movement_type, performed_by)
                     VALUES (%s, NULL, %s, %s, 'IN', %s)
                 """, (inventory_id, location_id, quantity, user_id))
-                mysql.connection.commit()
+                db.commit()
                 # Update stock_levels
                 cur.execute("""
                     SELECT stock_id, quantity FROM stock_levels 
@@ -1213,14 +1213,14 @@ def stock_entry():
                         INSERT INTO stock_levels (inventory_id, location_id, quantity)
                         VALUES (%s, %s, %s)
                     """, (inventory_id, location_id, quantity))
-                mysql.connection.commit()
+                db.commit()
                 # Update inventory_data record for that location
                 cur.execute("""
                     UPDATE inventory_data 
                     SET quantity = quantity + %s, updated_at = NOW()
                     WHERE inventory_id = %s
                 """, (quantity, inventory_id))
-                mysql.connection.commit()
+                db.commit()
                 # <-- Added notification check for "add" branch -->
                 check_and_generate_notification(inventory_id, company_id, user_id)
             
@@ -1304,7 +1304,7 @@ def stock_entry():
                     INSERT INTO stock_movements (inventory_id, from_location, to_location, quantity, movement_type, performed_by)
                     VALUES (%s, %s, %s, %s, 'TRANSFER', %s)
                 """, (inventory_id, from_location, to_location, quantity, user_id))
-                mysql.connection.commit()
+                db.commit()
                 # <-- Added notification check for "transfer" branch -->
                 check_and_generate_notification(inventory_id, company_id, user_id)
             
@@ -1328,14 +1328,14 @@ def stock_entry():
                     INSERT INTO stock_movements (inventory_id, from_location, to_location, quantity, movement_type, performed_by)
                     VALUES (%s, %s, NULL, %s, 'OUT', %s)
                 """, (inventory_id, location_id, quantity, user_id))
-                mysql.connection.commit()
+                db.commit()
                 # Update inventory_data for sold stock (decrease quantity)
                 cur.execute("""
                     UPDATE inventory_data 
                     SET quantity = quantity - %s, updated_at = NOW()
                     WHERE inventory_id = %s AND location_id = %s
                 """, (quantity, inventory_id, location_id))
-                mysql.connection.commit()
+                db.commit()
                 # <-- Added notification check for "sold" branch -->
                 check_and_generate_notification(inventory_id, company_id, user_id)
             
@@ -1374,7 +1374,7 @@ def stock_entry():
         
         return render_template("stock_entry.html", products=products, locations=locations, movements=movement_list)
     except Exception as e:
-        mysql.connection.rollback()
+        db.rollback()
         print("Error in stock_entry:", e)
         return "Error", 500
     finally:
@@ -1387,7 +1387,7 @@ def undo_movement():
         return redirect(url_for('login'))
     
     username = session.get('username')
-    cur = mysql.connection.cursor()
+    cur = db.cursor()
     # Get company_id for the current user
     cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
     result = cur.fetchone()
@@ -1513,10 +1513,10 @@ def undo_movement():
         
         # Finally, delete the movement record
         cur.execute("DELETE FROM stock_movements WHERE movement_id = %s", (movement_id,))
-        mysql.connection.commit()
+        db.commit()
         return redirect(url_for('stock_entry'))
     except Exception as e:
-        mysql.connection.rollback()
+        db.rollback()
         print("Error undoing movement:", e)
         return "Error", 500
     finally:
@@ -1530,7 +1530,7 @@ def analytics():
     
     username = session.get('username')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Get company_id for the current user
         cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
         result = cur.fetchone()
@@ -1637,7 +1637,7 @@ def vendor_list():
     
     username = session.get('username')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         # Get company_id for the current user from user_data
         cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
         result = cur.fetchone()
@@ -1658,7 +1658,7 @@ def vendor_list():
                 (company_id, vendor_name, vendor_contact, vendor_address, vendor_email, vendor_products)
                 VALUES (%s, %s, %s, %s, %s, %s)
             """, (company_id, vendor_name, vendor_contact, vendor_address, vendor_email, vendor_products))
-            mysql.connection.commit()
+            db.commit()
             return redirect(url_for('vendor_list'))
 
         # GET: Retrieve all vendors for the current company
@@ -1680,7 +1680,7 @@ def edit_vendor(vendor_id):
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         username = session.get('username')
         cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
         company = cur.fetchone()
@@ -1707,7 +1707,7 @@ def edit_vendor(vendor_id):
                 SET vendor_name = %s, vendor_contact = %s, vendor_address = %s, vendor_email = %s, vendor_products = %s
                 WHERE vendor_id = %s AND company_id = %s
             """, (vendor_name, vendor_contact, vendor_address, vendor_email, vendor_products, vendor_id, company[0]))
-            mysql.connection.commit()
+            db.commit()
             return redirect(url_for('vendor_list'))
         return render_template("edit_vendor.html", vendor=vendor)
     except Exception as e:
@@ -1722,7 +1722,7 @@ def delete_vendor(vendor_id):
     if not session.get('user_logged_in'):
         return redirect(url_for('login'))
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         username = session.get('username')
         cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
         company = cur.fetchone()
@@ -1734,7 +1734,7 @@ def delete_vendor(vendor_id):
             return "Unauthorized", 403
 
         cur.execute("DELETE FROM vendor_data WHERE vendor_id = %s AND company_id = %s", (vendor_id, company[0]))
-        mysql.connection.commit()
+        db.commit()
         return redirect(url_for('vendor_list'))
     except Exception as e:
         print("Delete vendor error:", e)
@@ -1756,7 +1756,7 @@ def barcode_generate():
         return redirect(url_for('login'))
     username = session.get('username')
     try:
-        cur = mysql.connection.cursor()
+        cur = db.cursor()
         cur.execute("SELECT company_id FROM user_data WHERE username = %s", (username,))
         result = cur.fetchone()
         if not result or result[0] is None:
@@ -1828,7 +1828,7 @@ def barcode_scan():
 
 @app.route('/get_item_location/<int:inventory_id>/<int:location_id>')
 def get_item_location(inventory_id, location_id):
-    cursor = mysql.connection.cursor()
+    cursor = db.cursor()
 
     # Fetch item name
     cursor.execute("SELECT name FROM inventory_data WHERE id = %s", (inventory_id,))
